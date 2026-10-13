@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+viam.json
+*viam*secret*
+*.key
+.vscode/
