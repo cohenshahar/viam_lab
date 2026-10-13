@@ -8,3 +8,4 @@
 | 4 | 2026-10-13 | Track progress with one log file per day | Simple, and easy to read back |
 | 5 | 2026-10-13 | Learning mode: I write the code myself, Claude hints and reviews | The goal is to learn, not only to get it done |
 | 6 | 2026-10-13 | Project language is English | Shahar's choice |
+| 7 | 2026-10-13 | Concept first, then Claude does the heavy coding; I read, run and review it (replaces #5) | Saves time in a 6-day sprint; the learning stays in the concepts and the review |

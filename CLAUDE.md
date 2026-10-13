@@ -5,7 +5,7 @@ A one-week learning sprint (Tue 13 Oct to Sun 18 Oct 2026) to learn the Viam rob
 platform and model my lab robot in it, in simulation first, with real hardware as the
 next step. When the sprint ends, this folder moves into the CaP thesis folder and repo.
 
-Owner: Shahar (M.Sc. Mechatronics, BGU, Prof. Amir Shapiro's lab).
+Owner: Shahar (M.Sc. Mechatronics, BGU, Prof. Amir Shapira's lab).
 Viam contacts: Avery Rosen (Technical Chief of Staff), Oliver Mitchell.
 
 ## Goal
@@ -18,8 +18,10 @@ Viam contacts: Avery Rosen (Technical Chief of Staff), Oliver Mitchell.
 About 3 hours a day, Tue to Sun. Log real hours every day in 40_logs.
 
 ## How we work (most important)
-This is a LEARNING project. I want to do more of the work myself than usual.
-- I write the configs and code myself. Claude explains, reviews and points to docs.
+This is a LEARNING project, on a tight 6-day clock.
+- First I learn the concept (Claude explains the why, I ask until it's clear).
+  Then Claude writes the heavy code and configs, and I read, run and question them.
+  Small or key pieces I still write myself, to check I understood.
 - When I'm stuck: first a hint, then a smaller hint, and a full solution only if I ask.
 - Explain the "why", not only the "how". Expand every acronym once, with one line on
   what it actually is.
