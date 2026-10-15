@@ -6,11 +6,16 @@ interesting, go deeper and move the rest.
 | Day | Focus | Done when |
 | --- | --- | --- |
 | Tue 13 | Setup: folder, GitHub repo, Viam account, start Viam 101 | Repo pushed, first course module started, log written |
-| Wed 14 | Viam 101: app, machines, config, components, services | Notes per module in 10_course |
-| Thu 15 | Finish Viam 101 + Python SDK from this computer (connect, read state, move a fake arm) | First own script in 20_sim/scripts runs against a sim machine |
-| Fri 16 | KR6 in Viam: kinematics file, frame system, motion service | KR6 (or a stand-in arm) moves to a target pose in sim |
-| Sat 17 | Mobile base: fake base + arm on top of the cart frame | Script drives the base and reaches with the arm |
+| Wed 14 | Viam 101 (finished, all 19 steps) + start Viam 102 | Notes per module in 10_course |
+| Thu 15 | **Lab day** at the physical robot: record every part, measure, photograph; add its blocks to the lab robot machine in Viam | 30_robot has a full hardware record; lab robot machine has a block for each part |
+| Fri 16 | KR6 in Viam (from home): kinematics file, frame system, motion service; continue Viam 102 | KR6 (or a stand-in arm) moves to a target pose in sim |
+| Sat 17 | Mobile base: fake base + arm on top of the cart frame (from home) | Script drives the base and reaches with the arm |
 | Sun 18 | Strong lab computer: viam-server on Ubuntu, same config; week summary | Same machine config runs on Ubuntu; summary + next steps written |
+
+## Sim build (Thu afternoon to Sat)
+Step-by-step checklist with gates: `00_admin/sim_build_checklist.md` (decisions #11-#20).
+Thu = lab day (`30_robot/lab_day_checklist.md`), Fri/Sat = sim on the home PC (full demo by Sat night),
+Sun = real cart Pi: our script drives the cart (no arm).
 
 ## After the sprint
 - Move this folder into the CaP thesis folder and merge the repo.

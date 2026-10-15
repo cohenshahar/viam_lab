@@ -6,3 +6,8 @@ viam.json
 *viam*secret*
 *.key
 .vscode/
+api-key*.json
+.venv-linux/
+20_sim/.env
+*.img
+20_sim/scripts/out/

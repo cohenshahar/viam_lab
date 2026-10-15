@@ -1,0 +1,9 @@
+{
+  "_about": "Copied once from the 2024 cart project report, table 6 (free-wheel speed vs PWM, forward, first/low gear). Source: CaP_Thesis/sim/cart_kr6/reference/cart_project_report_24-33.pdf, page 34. Free wheel = no load, so the loaded cart will be slower. Do not edit; replace with Sunday's measurements in measured_*.json.",
+  "pwm_resolution": 255,
+  "low_gear_forward": {
+    "pwm":        [69,  70,   75,   80,   85,   90,   95,   100,  105,  110,  115,  120,  125,  130,  135,  140,   145,   150,   155,   160,   165,   170,   175,   180],
+    "wheel_rpm":  [3.4, 5.6,  12.1, 19.0, 26.4, 33.6, 40.8, 46.7, 53.6, 60.8, 67.7, 74.9, 81.9, 87.4, 94.3, 101.2, 107.1, 114.8, 121.9, 127.4, 134.3, 141.2, 148.1, 148.2]
+  },
+  "old_code_low_gear_fit": "pwm = 7.2374 * omega_rad_s + 64.5066, capped at 178 (report appendix 12.4)"
+}

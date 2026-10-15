@@ -1,2 +1,3 @@
-# kinematics
-KR6 kinematics / URDF files for Viam.
+# 20_sim/kinematics
+
+See `20_sim/README.md` (what is here, what is generated, how to run).

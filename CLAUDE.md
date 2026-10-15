@@ -33,11 +33,19 @@ This is a LEARNING project, on a tight 6-day clock.
 - Check facts about Viam in the docs (docs.viam.com) before stating them. Say clearly
   when something is not verified.
 
+## Sim build week (15-18 Oct) - overrides the learning rules above
+Efficiency first (decision #15): Claude Code writes the code and configs; Shahar runs and approves at
+every GATE in `00_admin/sim_build_checklist.md`. No pieces held back for Shahar to write.
+
 ## Rules
 - Never delete a file. Old or dropped work moves to 90_archive with a date and a reason.
 - Secrets (API keys, machine cloud credentials, viam.json) never go into git.
 - GitHub (private repo Viam_Lab) is the bridge between the computers. Claude prepares
   files; I commit and push.
+- Course examples are not my robot. Values from Viam 101 (palletizer cell, Robotiq
+  EPick gripper, the 196 mm offset, arm/simulated) belong to the course's simulation
+  only. Never carry them over to the KR6 / cart. My robot's numbers come from
+  30_robot and from measuring the real hardware.
 - One source of truth per subject: the plan lives in 00_admin/plan.md, decisions in
   00_admin/decisions.md, daily progress in 40_logs.
 

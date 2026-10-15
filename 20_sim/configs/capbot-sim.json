@@ -1,0 +1,258 @@
+{
+  "modules": [
+    {
+      "type": "local",
+      "name": "capbot-sim-module",
+      "executable_path": "/sessions/rcw-01tcoqyvtp7y92zrw8yfsbyz/mnt/Documents/Viam_Lab/20_sim/modules/capbot_sim/run.sh"
+    }
+  ],
+  "components": [
+    {
+      "name": "cart-pose",
+      "api": "rdk:component:arm",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "model-path": "/sessions/rcw-01tcoqyvtp7y92zrw8yfsbyz/mnt/Documents/Viam_Lab/20_sim/kinematics/cart_planar.json"
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "cart",
+      "api": "rdk:component:base",
+      "model": "capbot:sim:sim-base",
+      "attributes": {
+        "pose_arm": "cart-pose",
+        "width_mm": 478.0,
+        "wheel_circumference_mm": 1124.7,
+        "max_speed_mm_per_sec": 500,
+        "max_turn_deg_per_sec": 90,
+        "tick_hz": 20
+      },
+      "frame": {
+        "parent": "cart-pose",
+        "translation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "kr6",
+      "api": "rdk:component:arm",
+      "model": "rdk:builtin:simulated",
+      "attributes": {
+        "model-path": "/sessions/rcw-01tcoqyvtp7y92zrw8yfsbyz/mnt/Documents/Viam_Lab/20_sim/kinematics/kr6.json",
+        "speed": 1.0,
+        "simulate-time": true
+      },
+      "frame": {
+        "parent": "cart",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 403.9
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "vacuum",
+      "api": "rdk:component:gripper",
+      "model": "capbot:sim:vacuum",
+      "attributes": {
+        "tool_box_mm": {
+          "x": 70.0,
+          "y": 70.0,
+          "z": 476.0,
+          "translation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": -243.0
+          }
+        }
+      },
+      "frame": {
+        "parent": "kr6",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 491.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-front",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480,
+        "model": true
+      },
+      "frame": {
+        "parent": "cart",
+        "translation": {
+          "x": 491.5,
+          "y": 0.0,
+          "z": 416.4
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 1.0,
+            "y": 0.0,
+            "z": 0.0,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-rear",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480,
+        "model": true
+      },
+      "frame": {
+        "parent": "cart",
+        "translation": {
+          "x": -491.5,
+          "y": 0.0,
+          "z": 416.4
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-wrist",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480,
+        "model": true
+      },
+      "frame": {
+        "parent": "kr6",
+        "translation": {
+          "x": -66.0,
+          "y": 0.0,
+          "z": -50.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.121076029,
+            "y": 0.0,
+            "z": 0.992643237,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "lidar",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 320,
+        "height": 240
+      },
+      "frame": {
+        "parent": "cart",
+        "translation": {
+          "x": 480.0,
+          "y": 0.0,
+          "z": 503.9
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0,
+            "th": 0.0
+          }
+        }
+      }
+    },
+    {
+      "name": "imu",
+      "api": "rdk:component:movement_sensor",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "cart",
+        "translation": {
+          "x": -6.2,
+          "y": 0.0,
+          "z": 366.1
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0,
+            "th": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "_note": "GENERATED by 20_sim/tools/make_configs.py. Add the lab-world fragment in the app."
+}

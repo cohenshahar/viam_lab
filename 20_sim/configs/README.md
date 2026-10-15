@@ -1,2 +1,3 @@
-# configs
-Machine config JSON. No API keys or secrets here.
+# 20_sim/configs
+
+See `20_sim/README.md` (what is here, what is generated, how to run).

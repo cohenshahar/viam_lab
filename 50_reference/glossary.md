@@ -4,9 +4,10 @@
 | --- | --- |
 | viam-server | The program on the robot's computer that runs everything |
 | Machine | One robot (or device) in the Viam app, with its own config |
-| Component | One piece of hardware behind a standard API: arm, camera, base, motor |
-| Service | Built-in logic on top of components: motion, navigation, vision, data |
-| Module | A package that adds a driver or your own code |
+| Component | A piece of hardware your machine controls: an arm, a gripper, a camera |
+| Service | A capability that runs on top of components: motion planning, vision, data capture |
+| Resource | The word for either one (component or service); everything configured on a machine is a resource |
+| Module | The code that implements one or more resources. viam-server downloads modules from the registry and runs them |
 | Registry | Viam's shared store of modules, ML models and fragments |
 | Fragment | A reusable piece of config |
 | Frame system | The tree of coordinate frames: where each part sits relative to the others |

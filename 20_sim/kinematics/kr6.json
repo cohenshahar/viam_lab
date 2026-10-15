@@ -1,0 +1,292 @@
+{
+  "name": "kuka_kr6_capbot",
+  "kinematic_param_type": "SVA",
+  "links": [
+    {
+      "id": "kuka_base",
+      "parent": "world",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 341.5,
+        "y": 217.5,
+        "z": 263.3,
+        "translation": {
+          "x": -56.396,
+          "y": 0.444,
+          "z": 132.63
+        }
+      }
+    },
+    {
+      "id": "kuka_base_to_next",
+      "parent": "kuka_base",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 400.0
+      }
+    },
+    {
+      "id": "link_1",
+      "parent": "joint_a1",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 305.3,
+        "y": 284.2,
+        "z": 339.2,
+        "translation": {
+          "x": 27.443,
+          "y": -1.748,
+          "z": -60.816
+        }
+      }
+    },
+    {
+      "id": "link_1_to_next",
+      "parent": "link_1",
+      "translation": {
+        "x": 25.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "link_2",
+      "parent": "joint_a2",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 651.0,
+        "y": 285.1,
+        "z": 182.7,
+        "translation": {
+          "x": 229.705,
+          "y": -16.553,
+          "z": 1.37
+        }
+      }
+    },
+    {
+      "id": "link_2_to_next",
+      "parent": "link_2",
+      "translation": {
+        "x": 455.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "link_3",
+      "parent": "joint_a3",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 273.4,
+        "y": 162.7,
+        "z": 256.4,
+        "translation": {
+          "x": 27.684,
+          "y": 0.291,
+          "z": 16.391
+        }
+      }
+    },
+    {
+      "id": "link_3_to_next",
+      "parent": "link_3",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 35.0
+      }
+    },
+    {
+      "id": "link_4",
+      "parent": "joint_a4",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 364.4,
+        "y": 189.3,
+        "z": 186.9,
+        "translation": {
+          "x": 286.501,
+          "y": 3.376,
+          "z": 5.669
+        }
+      }
+    },
+    {
+      "id": "link_4_to_next",
+      "parent": "link_4",
+      "translation": {
+        "x": 420.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "link_5",
+      "parent": "joint_a5",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 129.3,
+        "y": 91.7,
+        "z": 79.4,
+        "translation": {
+          "x": 19.776,
+          "y": -1.748,
+          "z": -0.011
+        }
+      }
+    },
+    {
+      "id": "link_5_to_next",
+      "parent": "link_5",
+      "translation": {
+        "x": 80.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "link_6",
+      "parent": "joint_a6",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 13.5,
+        "y": 45.8,
+        "z": 45.8,
+        "translation": {
+          "x": -6.757,
+          "y": -0.0,
+          "z": -0.012
+        }
+      }
+    },
+    {
+      "id": "flange",
+      "parent": "link_6",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "orientation": {
+        "type": "ov_degrees",
+        "value": {
+          "x": 1.0,
+          "y": 0.0,
+          "z": 0.0,
+          "th": 0.0
+        }
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "joint_a1",
+      "type": "revolute",
+      "parent": "kuka_base_to_next",
+      "axis": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": -1.0
+      },
+      "min": -170.0,
+      "max": 170.0
+    },
+    {
+      "id": "joint_a2",
+      "type": "revolute",
+      "parent": "link_1_to_next",
+      "axis": {
+        "x": 0.0,
+        "y": 1.0,
+        "z": 0.0
+      },
+      "min": -190.0003,
+      "max": 45.0
+    },
+    {
+      "id": "joint_a3",
+      "type": "revolute",
+      "parent": "link_2_to_next",
+      "axis": {
+        "x": 0.0,
+        "y": 1.0,
+        "z": 0.0
+      },
+      "min": -120.0003,
+      "max": 155.9998
+    },
+    {
+      "id": "joint_a4",
+      "type": "revolute",
+      "parent": "link_3_to_next",
+      "axis": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "min": -185.0001,
+      "max": 185.0001
+    },
+    {
+      "id": "joint_a5",
+      "type": "revolute",
+      "parent": "link_4_to_next",
+      "axis": {
+        "x": 0.0,
+        "y": 1.0,
+        "z": 0.0
+      },
+      "min": -120.0003,
+      "max": 120.0003
+    },
+    {
+      "id": "joint_a6",
+      "type": "revolute",
+      "parent": "link_5_to_next",
+      "axis": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "min": -349.9999,
+      "max": 349.9999
+    }
+  ]
+}

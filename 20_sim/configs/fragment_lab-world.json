@@ -1,0 +1,207 @@
+{
+  "components": [
+    {
+      "name": "pillar-front-left",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 4500.0,
+          "y": 3250.0,
+          "z": 2015.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 260.0,
+          "y": 260.0,
+          "z": 4030.0
+        }
+      }
+    },
+    {
+      "name": "pillar-front-right",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 4500.0,
+          "y": -3250.0,
+          "z": 2015.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 260.0,
+          "y": 260.0,
+          "z": 4030.0
+        }
+      }
+    },
+    {
+      "name": "pillar-rear-left",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -4500.0,
+          "y": 3250.0,
+          "z": 2015.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 260.0,
+          "y": 260.0,
+          "z": 4030.0
+        }
+      }
+    },
+    {
+      "name": "pillar-rear-right",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -4500.0,
+          "y": -3250.0,
+          "z": 2015.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 260.0,
+          "y": 260.0,
+          "z": 4030.0
+        }
+      }
+    },
+    {
+      "name": "lab-table",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 2600.0,
+          "y": 1100.0,
+          "z": 500.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 1660.0,
+          "y": 860.0,
+          "z": 1000.0
+        }
+      }
+    },
+    {
+      "name": "lab-cabinet",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 2675.0,
+          "y": -1200.0,
+          "z": 765.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 610.0,
+          "y": 1060.0,
+          "z": 1530.0
+        }
+      }
+    },
+    {
+      "name": "floor",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": -20.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 9000.0,
+          "y": 6500.0,
+          "z": 40.0
+        }
+      }
+    }
+  ]
+}

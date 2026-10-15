@@ -1,0 +1,16 @@
+{
+  "measured_file": "30_robot/measured_2026-10-15.json",
+  "value_source": {
+    "drive_wheel_circumference_mm": "thesis sim",
+    "track_width_mm": "thesis sim"
+  },
+  "pins_confirmed_on_cart": false,
+  "gear_pins": {
+    "left": "8",
+    "right": "37",
+    "low_gear_level": null
+  },
+  "operating_power": 0.3,
+  "max_rpm_reason": "report: 14.2 rpm at power 0.3; Viam power = rpm/max_rpm",
+  "speed_at_operating_power_mm_s_free_wheel": 266.2
+}

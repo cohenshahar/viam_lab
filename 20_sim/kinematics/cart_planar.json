@@ -1,0 +1,82 @@
+{
+  "name": "cart_planar",
+  "kinematic_param_type": "SVA",
+  "links": [
+    {
+      "id": "x_link",
+      "parent": "x",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "y_link",
+      "parent": "y",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      }
+    },
+    {
+      "id": "cart_body",
+      "parent": "yaw",
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "geometry": {
+        "type": "box",
+        "x": 1000.0,
+        "y": 700.0,
+        "z": 351.9,
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 225.95
+        }
+      }
+    }
+  ],
+  "joints": [
+    {
+      "id": "x",
+      "type": "prismatic",
+      "parent": "world",
+      "axis": {
+        "x": 1.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "min": -4500.0,
+      "max": 4500.0
+    },
+    {
+      "id": "y",
+      "type": "prismatic",
+      "parent": "x_link",
+      "axis": {
+        "x": 0.0,
+        "y": 1.0,
+        "z": 0.0
+      },
+      "min": -3250.0,
+      "max": 3250.0
+    },
+    {
+      "id": "yaw",
+      "type": "revolute",
+      "parent": "y_link",
+      "axis": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      "min": -720.0,
+      "max": 720.0
+    }
+  ]
+}

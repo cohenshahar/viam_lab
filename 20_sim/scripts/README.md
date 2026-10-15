@@ -1,2 +1,3 @@
-# scripts
-My Python SDK scripts. Keys come from a local .env file, never hard-coded.
+# 20_sim/scripts
+
+See `20_sim/README.md` (what is here, what is generated, how to run).

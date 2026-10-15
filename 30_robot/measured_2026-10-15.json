@@ -1,0 +1,23 @@
+{
+  "_about": "Lab tape measurements, Thu 15 Oct 2026. Fill in mm / degrees; leave null when not measured. A non-null value here wins over the thesis sim value for the REAL cart config (20_sim/tools/make_configs.py). Where each was measured from/to goes in 'notes'.",
+  "drive_wheel_diameter_mm": null,
+  "drive_wheel_circumference_mm": null,
+  "track_width_mm": null,
+  "frame_length_mm": null,
+  "frame_width_mm": null,
+  "frame_top_height_mm": null,
+  "lidar_position_in_cart_mm": null,
+  "imu_position_in_cart_mm": null,
+  "pi_pins": {
+    "left_throttle_pwm": "12",
+    "left_reverse": "10",
+    "left_gear": "8",
+    "right_throttle_pwm": "33",
+    "right_reverse": "35",
+    "right_gear": "37",
+    "confirmed_on_cart": false
+  },
+  "pi_pwm_freq_hz_old_code": null,
+  "low_gear_pin_level": null,
+  "notes": []
+}
