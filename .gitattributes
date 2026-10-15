@@ -1,0 +1,2 @@
+# Shell scripts run on Linux (viam-server starts run.sh): always keep Linux line endings.
+*.sh text eol=lf
