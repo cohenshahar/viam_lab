@@ -46,33 +46,34 @@ Items marked *(written Thu, run Fri)* still need their gate run against viam-ser
 
 ## Phase 0 - Setup (~45 min)
 - [x] [S] Org **Robotics_BGU**, locations `Lab-floor` / `arm-table` / `sim`, machines **capbot** and **capbot-sim** created (Thu 11:41).
-- [ ] [S] On the PC (Ubuntu): install viam-server for **capbot-sim** from its setup page. Machine shows Live.
-- [ ] [S] Clone Viam_Lab and CaP_Thesis (read only) side by side. Set `CAP_THESIS_DIR` in `~/.bashrc`.
-- [ ] [S] venv `.venv-linux` with `viam-sdk==0.84.0`, numpy, mujoco 3.8.1 (commands in `20_sim/README.md`).
+- [x] [S] On the PC (Ubuntu): install viam-server for **capbot-sim** from its setup page. Machine shows Live.
+- [x] [S] Clone Viam_Lab and CaP_Thesis (read only) side by side. Set `CAP_THESIS_DIR` in `~/.bashrc`.
+- [x] [S] venv `.venv-linux` with `viam-sdk==0.84.0`, numpy, mujoco 3.8.1 (commands in `20_sim/README.md`). Done Thu evening on the Ubuntu PC (Python 3.10.12); build/check_fk PASS/make_configs re-run there.
 - [x] [CC] `.gitignore`: `viam.json`, `.env`, `*.img`, venvs, `__pycache__`. `20_sim/.env.example` with key names only.
 - [ ] [S] `viam login` on the PC; `viam organizations list` shows Robotics_BGU.
 - [x] [CC] `20_sim/scripts/connect_check.py` (reads address + API key from `.env`, prints resource names). *(written Thu, run Fri)*
-- [ ] **GATE 0:** connect_check prints the machine's resources. Commit.
+- [x] **GATE 0:** connect_check prints the machine's resources. Commit. PASS Thu 14:47 (1 resource: motion builtin).
 
 ## Phase 1 - Spikes (mostly answered on Thu from docs + source, see `50_reference/viam_facts_2026-10-15.md`)
 Settled on paper (decision #21):
 - [x] Arm = `rdk:builtin:simulated` with `model-path` to our SVA JSON, `simulate-time: true`.
-- [x] Fake base / fake movement sensor / fake gripper are useless for us -> own `sim-base`, own `vacuum`.
+- [x] Fake base / fake movement sensor / fake gripper are useless for us -> own `vacuum`; cart = Viam's wheeled base on fake motors + our `odom` (decision #28).
 - [x] Motion service can't drive a base -> cart moves from our code; motion service for the arm only.
-- [x] Obstacles = generic fake components with frame geometry (fragment `lab-world`).
-Still to confirm on the PC (30 min max):
-- [ ] S1 The simulated arm loads `kr6.json` and `cart_planar.json` from an absolute path; 3D scene shows them.
-- [ ] S2 **Cart trick:** `cart-pose` is a simulated "arm" with 3 joints (x, y, yaw). The cart frame and the KR6 hang under it,
-      so moving those joints moves the whole robot in the frame system. Check: set cart-pose joints -> KR6 moves in the 3D scene.
-- [ ] S3 **Planner must not move the cart:** `motion.move` for the vacuum with the target pose given in frame `cart`
-      leaves the cart-pose joints alone. If not: find the way that does (constraint / arm-only plan) and write it down.
-- [ ] S4 A fragment component works as an obstacle on the machine.
-- [ ] **GATE 1:** S1-S4 results in the log. Commit.
+- [x] ~~Obstacles = fragment `lab-world`~~ -> (decision #29) room obstacles sent with each arm move as WorldState, moved into the cart frame from odom.
+Confirmed on the PC (Thu 15 Oct):
+- [x] S1 The simulated arm loads `kr6.json` (and `cart_planar.json`) from an absolute path. 7 joint poses match our FK, 0.0000 mm.
+- [x] S2 Cart trick worked (0.000 mm) **but is dropped**, because of S3.
+- [x] S3 **Planner must not move the cart:** FAILED with the cart trick: Viam's motion service turns every goal into a world goal,
+      so the planner used cart-pose's x / y / yaw (slid 124.6 mm). Fix = decision #29: Viam's model, world frame = the cart,
+      `odom` for the room position, `arm_move()` sends the room per move. Re-check in GATE 3.
+- [x] S4 Fragment obstacles showed in the 3D scene, then dropped for capbot-sim (decision #29).
+- [x] **GATE 1:** results in the log (40_logs/2026-10-15.md).
 
 ## Phase 2 - Numbers + generated files (done Thu from the Windows PC; re-run on any thesis change)
 - [x] [CC] `20_sim/tools/build_viam_files.py` compiles the thesis MuJoCo model (MuJoCo 3.8.1, absolute path) and writes,
       all generated, never edited by hand: `20_sim/generated/robot_numbers.json`, `20_sim/kinematics/kr6.json`,
-      `20_sim/kinematics/cart_planar.json`, `20_sim/configs/fragment_lab-world.json`.
+      (decision #29: `cart_planar.json` and `fragment_lab-world.json` no longer generated; room boxes with margin are in
+      `robot_numbers.json` -> `world.obstacles[*].planning_box_mm`; cart body box -> `viam_frames.cart_geometry`).
 - [ ] [CC] **Lab overrides:** `30_robot/measured_2026-10-15.json` (today's tape numbers) wins over the sim value for the
       real cart config; the JSON says which won.
 - [ ] **GATE 2:** Shahar spot-checks 5 numbers in `robot_numbers.json` against the thesis files.
@@ -86,14 +87,19 @@ Still to confirm on the PC (30 min max):
 - [ ] **GATE 3:** arm_check pass; 3D scene: arm on the cart, right place, right way round. Commit.
 
 ## Phase 4 - Cart (same name `cart` as the real one)
-- [x] [CC] `cart-pose`: `rdk:builtin:fake` arm (jumps at once, so it follows every tick), `model-path` = `cart_planar.json` (x, y prismatic; yaw revolute; cart body box on the last link).
-- [x] [CC] Local module `20_sim/modules/capbot_sim/`, model `capbot:sim:sim-base` (base API) named `cart`: depends on `cart-pose`;
-      `move_straight`, `spin`, `set_velocity`, `set_power`, `stop`, `is_moving`, `get_properties` (width/wheel from the numbers).
-      Integrates the pose at 20 Hz and writes it to the cart-pose joints. Speed limits as attributes.
-      DoCommand `{"command":"pose"}` -> x_mm, y_mm, yaw_deg (the sim odometry); `set_pose` to teleport. Tests pass with a stand-in arm. *(written Thu, run Fri)*
-- [x] [CC] Frames: `cart` parent `cart-pose`; everything on the cart (kr6, lidar, cameras, imu) parent `cart`.
-- [x] [CC] `20_sim/scripts/base_check.py`: 1 m square; pose back at start within 1 mm / 0.1 deg; frame system agrees. *(written Thu, run Fri)*
-- [ ] **GATE 4:** square closes; the KR6 rides along in the 3D scene. Commit.
+- [x] ~~`cart-pose` fake arm (cart trick)~~ archived, decision #29 (`90_archive/2026-10-15_cart_pose_trick/`).
+- [x] [CC] (v2, decision #28) Like the real cart: `cart` = `rdk:builtin:wheeled` base on motors `left` / `right`
+      (`rdk:builtin:fake` motors, each with a fake encoder `left-enc` / `right-enc`, real cart's `max_rpm`). Viam's wheeled base
+      does distance/angle -> wheel revolutions + rpm from `width_mm` / `wheel_circumference_mm` (whole mm).
+      Our module part `odom` (`capbot:sim:wheel-odom`, generic) reads the wheel turns at 20 Hz and does diff-drive odometry
+      (the cart's place in the room; not in the frame tree, decision #29). DoCommand on `odom`: `pose` -> x_mm, y_mm, yaw_deg, left_rev, right_rev;
+      `set_pose` to teleport. `test_module.py` passes (wheel math copied from the RDK source, 1 m square closes).
+      Old `capbot:sim:sim-base`: `90_archive/2026-10-15_sim_base/`. *(written Thu, run Fri)*
+- [x] [CC] Frames (decision #29): `cart` parent `world` with the cart body box as its geometry; everything on the cart
+      (kr6, lidar, cameras, imu) parent `cart`.
+- [x] [CC] `20_sim/scripts/base_check.py`: 1 m square; odom back at start within 1 mm / 0.1 deg; wheel turns match the
+      wheeled-base math within 0.01 rev. *(written Thu, run Fri)*
+- [ ] **GATE 4:** square closes; wheel turns right. Commit.
 
 ## Phase 5 - Vacuum tool
 - [x] [CC] Gripper `vacuum` (`capbot:sim:vacuum`): `grab` = suction on, `open` = off, `is_holding`, `stop`; tool box served as a no-joint kinematics model.
@@ -109,13 +115,14 @@ Still to confirm on the PC (30 min max):
 - [ ] **GATE 6:** all readable; frames right in the 3D scene. Commit.
 
 ## Phase 7 - Lab world
-- [x] [CC] Fragment JSON `lab-world` generated from the thesis lab (4 pillars, table, cabinet, +30 mm margin).
+- [x] [CC] Room boxes generated from the thesis lab (4 pillars, table, cabinet, floor, +30 mm margin) into `robot_numbers.json`;
+      `capbot_common.arm_move()` sends them with each arm move, moved into the cart frame from odom (decision #29).
       **The thesis lab is a sketch** (`sim/worlds/lab/README.md`: no tape has been near the room). Origin = centre of
       the 9 x 6.5 m floor, +X along the 9 m side (thesis convention, kept). Lab measurements go into the thesis first, then re-generate.
-- [ ] [S] In the app: FRAGMENTS -> create `lab-world`, paste the JSON. Add it to capbot-sim (and capbot on Sunday).
+- [x] ~~[S] fragment `lab-world` on capbot-sim~~ dropped (decision #29).
 - [ ] [CC] Named places as data: `20_sim/configs/locations.json` (home, table pick spot, place spot).
 - [x] [CC] `20_sim/scripts/world_check.py`: above the table -> planned; inside the table / cabinet -> refused. *(written Thu, run Fri)*
-- [ ] **GATE 7:** world in the 3D scene; both checks behave. Commit.
+- [ ] **GATE 7:** world_check behaves (above the table planned; inside table / cabinet refused). Commit.
 
 ## Phase 8 - Primitives: Viam first, DoCommand for gaps
 - [x] [CC] `20_sim/primitive_map.md` (draft written Thu) from CaP_Thesis `docs/Research_API_Inventory_2026-09-03.md` + primitive survey. Draft:

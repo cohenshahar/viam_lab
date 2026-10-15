@@ -242,7 +242,7 @@
       -90.0,
       120.0,
       0.0,
-      60.0,
+      65.0,
       0.0
     ],
     "home_arm_up": [
@@ -268,6 +268,14 @@
       0.0,
       45.264,
       0.0
+    ],
+    "drive_look": [
+      0.0,
+      -150.0,
+      112.0,
+      0.0,
+      57.0,
+      0.0
     ]
   },
   "world": {
@@ -287,7 +295,19 @@
           4000.0
         ],
         "margin_mm": 30.0,
-        "top_kept_exact": false
+        "top_kept_exact": false,
+        "planning_box_mm": {
+          "min": [
+            4370.0,
+            3120.0,
+            0.0
+          ],
+          "max": [
+            4630.0,
+            3380.0,
+            4030.0
+          ]
+        }
       },
       "pillar-front-right": {
         "min_mm": [
@@ -301,7 +321,19 @@
           4000.0
         ],
         "margin_mm": 30.0,
-        "top_kept_exact": false
+        "top_kept_exact": false,
+        "planning_box_mm": {
+          "min": [
+            4370.0,
+            -3380.0,
+            0.0
+          ],
+          "max": [
+            4630.0,
+            -3120.0,
+            4030.0
+          ]
+        }
       },
       "pillar-rear-left": {
         "min_mm": [
@@ -315,7 +347,19 @@
           4000.0
         ],
         "margin_mm": 30.0,
-        "top_kept_exact": false
+        "top_kept_exact": false,
+        "planning_box_mm": {
+          "min": [
+            -4630.0,
+            3120.0,
+            0.0
+          ],
+          "max": [
+            -4370.0,
+            3380.0,
+            4030.0
+          ]
+        }
       },
       "pillar-rear-right": {
         "min_mm": [
@@ -329,7 +373,19 @@
           4000.0
         ],
         "margin_mm": 30.0,
-        "top_kept_exact": false
+        "top_kept_exact": false,
+        "planning_box_mm": {
+          "min": [
+            -4630.0,
+            -3380.0,
+            0.0
+          ],
+          "max": [
+            -4370.0,
+            -3120.0,
+            4030.0
+          ]
+        }
       },
       "lab-table": {
         "min_mm": [
@@ -343,7 +399,19 @@
           1000.0
         ],
         "margin_mm": 30.0,
-        "top_kept_exact": true
+        "top_kept_exact": true,
+        "planning_box_mm": {
+          "min": [
+            1770.0,
+            670.0,
+            0.0
+          ],
+          "max": [
+            3430.0,
+            1530.0,
+            1000.0
+          ]
+        }
       },
       "lab-cabinet": {
         "min_mm": [
@@ -357,7 +425,19 @@
           1500.0
         ],
         "margin_mm": 30.0,
-        "top_kept_exact": false
+        "top_kept_exact": false,
+        "planning_box_mm": {
+          "min": [
+            2370.0,
+            -1730.0,
+            0.0
+          ],
+          "max": [
+            2980.0,
+            -670.0,
+            1530.0
+          ]
+        }
       },
       "floor": {
         "min_mm": [
@@ -371,14 +451,36 @@
           0.0
         ],
         "margin_mm": 0,
-        "top_kept_exact": true
+        "top_kept_exact": true,
+        "planning_box_mm": {
+          "min": [
+            -4500.0,
+            -3250.0,
+            -40.0
+          ],
+          "max": [
+            4500.0,
+            3250.0,
+            0.0
+          ]
+        }
       }
-    }
-  },
-  "cart_planar": {
-    "note": "Sim only: x, y (mm) and yaw (deg) of the cart in the world, as 3 joints, so the frame system carries the arm with the cart. Limits = the lab floor."
+    },
+    "note": "Room frame. planning_box_mm = the box the arm planner avoids (margin added)."
   },
   "viam_frames": {
+    "cart_parent": "world",
+    "cart_geometry": {
+      "type": "box",
+      "x": 1000.0,
+      "y": 700.0,
+      "z": 351.9,
+      "translation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 225.95
+      }
+    },
     "kr6_parent": "cart",
     "kr6_translation_mm": [
       0.0,

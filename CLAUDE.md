@@ -62,7 +62,10 @@ every GATE in `00_admin/sim_build_checklist.md`. No pieces held back for Shahar 
 - 90_archive/    dropped or old work, never deleted
 
 ## Known facts (checked)
-- Python venv in .venv (Python 3.12.3) already has viam-sdk 0.84.0 installed.
+- Windows PC: Python venv in .venv (Python 3.12.3) has viam-sdk 0.84.0 installed.
+- Ubuntu PC (22.04, x86_64): repos in ~/robotics/viam_lab and ~/robotics/CaP_Thesis; venv
+  .venv-linux (Python 3.10.12) with viam-sdk 0.84.0, numpy, mujoco 3.8.1. CAP_THESIS_DIR is set in
+  ~/.bashrc, which non-interactive shells skip, so set it inline when running scripts.
 - Viam 101 is free, self-paced and runs fully in simulation.
 - The official viam-kuka module lists the KR10 R900-2 only. KR6 is not listed, so the
   KR6 likely needs its own kinematics / URDF file. (To confirm.)

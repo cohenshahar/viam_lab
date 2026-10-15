@@ -39,6 +39,14 @@ def step(p: Pose, v_mm_s: float, w_deg_s: float, dt_s: float) -> Pose:
     return Pose(x, y, wrap_deg(p.yaw_deg + w_deg_s * dt_s))
 
 
+def odom_step(p: Pose, d_left_mm: float, d_right_mm: float, track_mm: float) -> Pose:
+    """Diff-drive odometry: how far each wheel rolled (mm) since the last step -> new pose.
+    Forward = the mean of the two wheels; turn (left +) = (right - left) / track.
+    Treats the step as one arc, so it is exact while both wheels keep a steady speed."""
+    turn_deg = math.degrees((d_right_mm - d_left_mm) / track_mm)
+    return step(p, (d_left_mm + d_right_mm) / 2.0, turn_deg, 1.0)
+
+
 def wheel_speeds(v_mm_s, w_deg_s, track_mm):
     """Left / right wheel ground speeds (mm/s) for a body speed and turn rate."""
     half = track_mm / 2.0 * math.radians(w_deg_s)

@@ -1,10 +1,11 @@
-"""GATE 7: the planner respects the lab-world obstacles.
+"""GATE 7: the planner respects the room's obstacles.
 
-Puts the cart in front of the lab table, then
+Puts the cart (odom teleport) in front of the lab table, then, through capbot_common.arm_move
+(which places the room around the cart from odom, decision #29):
   1. asks for a cup pose just above the table top   -> must succeed
   2. asks for a cup pose inside the table           -> must be refused
   3. asks for a cup pose inside the cabinet's box   -> must be refused
-Needs the lab-world fragment on capbot-sim.
+Targets are written in the room frame and turned into the cart frame (= Viam's world frame).
 
 Run:  python3 20_sim/scripts/world_check.py
 Pass: "world_check PASS".
@@ -13,17 +14,17 @@ Pass: "world_check PASS".
 import asyncio
 
 from viam.components.arm import Arm, JointPositions
-from viam.components.base import Base
-from viam.services.motion import MotionClient
+from viam.components.generic import Generic
 
-from capbot_common import connect, numbers, pose, pose_in
+from capbot_common import arm_move, connect, numbers, pose, pose_in, room_point_in_cart
 
 DOWN = dict(ox=0, oy=0, oz=-1, th=0)
 
 
-async def try_move(motion, frame, xyz):
+async def try_move(robot, cart_pose, room_xyz):
     try:
-        return bool(await motion.move("vacuum", pose_in(frame, pose(*xyz, **DOWN))))
+        xyz = room_point_in_cart(room_xyz, cart_pose)
+        return bool(await arm_move(robot, pose_in("world", pose(*xyz, **DOWN))))
     except Exception as e:
         print(f"     planner said: {str(e).splitlines()[0][:160]}")
         return False
@@ -39,26 +40,23 @@ async def main():
     robot = await connect("sim")
     ok = True
     try:
-        cart = Base.from_robot(robot, "cart")
+        odom = Generic.from_robot(robot, "odom")  # sim odometry: pose / set_pose
         arm = Arm.from_robot(robot, "kr6")
-        motion = MotionClient.from_robot(robot, "builtin")
-        names = {r.name for r in robot.resource_names}
-        if "lab-table" not in names:
-            print("FAIL the lab-world fragment is not on this machine (no 'lab-table')")
-            return
         # cart 650 mm in front of the table edge, facing it (+Y)
-        await cart.do_command({"command": "set_pose", "x_mm": tx, "y_mm": front_y - 650, "yaw_deg": 90})
+        cart_pose = {"x_mm": tx, "y_mm": front_y - 650, "yaw_deg": 90}
+        await odom.do_command({"command": "set_pose", **cart_pose})
         await arm.move_to_joint_positions(JointPositions(values=n["named_arm_poses_deg"]["home_folded"]))
         above = (tx, front_y + 250, top + 150)
         inside = (tx, front_y + 250, top - 200)
         in_cab = ((cab["min_mm"][0] + cab["max_mm"][0]) / 2, (cab["min_mm"][1] + cab["max_mm"][1]) / 2, 700)
-        r1 = await try_move(motion, "world", above)
+        r1 = await try_move(robot, cart_pose, above)
         print(f"{'OK  ' if r1 else 'FAIL'} 150 mm above the table: planned")
-        r2 = await try_move(motion, "world", inside)
+        r2 = await try_move(robot, cart_pose, inside)
         print(f"{'OK  ' if not r2 else 'FAIL'} inside the table: refused")
-        r3 = await try_move(motion, "world", in_cab)
+        r3 = await try_move(robot, cart_pose, in_cab)
         print(f"{'OK  ' if not r3 else 'FAIL'} inside the cabinet: refused")
         ok = r1 and not r2 and not r3
+        await odom.do_command({"command": "set_pose", "x_mm": 0, "y_mm": 0, "yaw_deg": 0})
     finally:
         await robot.close()
     print("world_check PASS" if ok else "world_check FAIL")

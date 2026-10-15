@@ -14,8 +14,10 @@ Needs: mujoco (same version as the thesis, 3.8.1), numpy.
 Writes (paths relative to the Viam_Lab repo):
     20_sim/generated/robot_numbers.json   every number, mm / degrees, with its source
     20_sim/kinematics/kr6.json            KR6 kinematics for Viam (SVA format)
-    20_sim/kinematics/cart_planar.json    the cart's x / y / yaw "joints" for the sim
-    20_sim/configs/fragment_lab-world.json  room obstacles, ready to paste into a fragment
+
+The room (world.obstacles) stays in robot_numbers.json, in the room frame. Viam's world frame is
+the cart (decision #29), so 20_sim/scripts/capbot_common.py places the room around the cart from
+the odometry before each arm move.
 """
 
 import json
@@ -267,31 +269,6 @@ def build_cart(mdl, numbers):
     return body_lo, body_hi, mount
 
 
-def build_cart_planar(numbers, body_lo, body_hi, floor):
-    lo, hi = floor
-    model = {
-        "name": "cart_planar",
-        "kinematic_param_type": "SVA",
-        "links": [
-            {"id": "x_link", "parent": "x", "translation": xyz([0, 0, 0])},
-            {"id": "y_link", "parent": "y", "translation": xyz([0, 0, 0])},
-            {"id": "cart_body", "parent": "yaw", "translation": xyz([0, 0, 0]),
-             "geometry": {k: v for k, v in box_geometry(body_lo, body_hi, "").items() if k != "label"}},
-        ],
-        "joints": [
-            {"id": "x", "type": "prismatic", "parent": "world", "axis": xyz([1, 0, 0]),
-             "min": round(float(lo[0]), 1), "max": round(float(hi[0]), 1)},
-            {"id": "y", "type": "prismatic", "parent": "x_link", "axis": xyz([0, 1, 0]),
-             "min": round(float(lo[1]), 1), "max": round(float(hi[1]), 1)},
-            {"id": "yaw", "type": "revolute", "parent": "y_link", "axis": xyz([0, 0, 1]),
-             "min": -720.0, "max": 720.0},
-        ],
-    }
-    numbers["cart_planar"] = {"note": "Sim only: x, y (mm) and yaw (deg) of the cart in the world, as 3 joints, "
-                                      "so the frame system carries the arm with the cart. Limits = the lab floor."}
-    return model
-
-
 def camera_viam_rotation(r_body_cam):
     """MuJoCo camera looks along its -Z with +Y up. Viam/OpenCV camera: +Z forward, +X right, +Y down."""
     return r_body_cam @ np.diag([1.0, -1.0, -1.0])
@@ -345,9 +322,7 @@ def build_named_poses(cap, numbers):
 
 
 def build_world(mdl, numbers):
-    m = mdl.m
-    comps, rec = [], {}
-    floor_box = None
+    rec = {}
     for name, (what, exact_top) in OBSTACLES.items():
         if isinstance(what, str):
             geoms = mdl.collision_geoms(set(mdl.subtree(what)))
@@ -355,28 +330,20 @@ def build_world(mdl, numbers):
             geoms = [mdl.id(mujoco.mjtObj.mjOBJ_GEOM, g) for g in what]
         lo, hi = mdl.world_box(geoms)
         if name == "floor":
-            floor_box = (lo, hi)
             glo, ghi = lo.copy(), hi.copy()
         else:
             glo, ghi = lo - MARGIN_MM, hi + MARGIN_MM
             glo[2] = max(glo[2], 0.0)  # never below the floor
             if exact_top:
                 ghi[2] = hi[2]
-        size, centre = ghi - glo, (ghi + glo) / 2
         rec[name] = {"min_mm": r3(lo), "max_mm": r3(hi), "margin_mm": 0 if name == "floor" else MARGIN_MM,
-                     "top_kept_exact": bool(exact_top)}
-        comps.append({
-            "name": name, "api": "rdk:component:generic", "model": "rdk:builtin:fake", "attributes": {},
-            "frame": {"parent": "world", "translation": xyz(centre),
-                      "orientation": {"type": "ov_degrees", "value": {"x": 0, "y": 0, "z": 1, "th": 0}},
-                      "geometry": {"type": "box", "x": round(float(size[0]), 1), "y": round(float(size[1]), 1),
-                                   "z": round(float(size[2]), 1)}},
-        })
+                     "top_kept_exact": bool(exact_top),
+                     "planning_box_mm": {"min": r3(glo), "max": r3(ghi)}}
     numbers["world"] = {"source": "sim/worlds/lab/*.xml via " + WORLD_REL,
                         "status": "SKETCH, not measured (see sim/worlds/lab/README.md)",
                         "origin": "centre of the lab floor, +X along the 9 m side",
-                        "obstacles": rec}
-    return {"components": comps}, floor_box
+                        "obstacles": rec,
+                        "note": "Room frame. planning_box_mm = the box the arm planner avoids (margin added)."}
 
 
 def write(path, data):
@@ -396,15 +363,14 @@ def main():
     body_lo, body_hi, mount = build_cart(mdl, numbers)
     build_sensors(mdl, numbers)
     build_named_poses(cap, numbers)
-    world, floor = build_world(mdl, numbers)
-    planar = build_cart_planar(numbers, body_lo, body_hi, floor)
+    build_world(mdl, numbers)
     numbers["viam_frames"] = {
+        "cart_parent": "world",
+        "cart_geometry": {k: v for k, v in box_geometry(body_lo, body_hi, "").items() if k != "label"},
         "kr6_parent": "cart", "kr6_translation_mm": r3(mount[:3, 3]),
         "vacuum_parent": "kr6", "vacuum_translation_mm": r3(tcp), "vacuum_geometry": tool_box,
     }
     write(REPO / "20_sim/kinematics/kr6.json", kr6)
-    write(REPO / "20_sim/kinematics/cart_planar.json", planar)
-    write(REPO / "20_sim/configs/fragment_lab-world.json", world)
     write(REPO / "20_sim/generated/robot_numbers.json", numbers)
 
 

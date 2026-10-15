@@ -4,7 +4,8 @@
     python3 30_robot/scripts/cart_sunday.py --machine real --motor-test          # WHEELS IN THE AIR
     python3 30_robot/scripts/cart_sunday.py --machine real --drive               # on the floor
 
---motor-test (real only): each motor forward 2 s, stop, backward 2 s, stop. Check direction.
+--motor-test: each motor forward 2 s, stop, backward 2 s, stop. Check direction. (In the sim the
+  fake motors turn and `odom` shows the cart move; a rehearsal of the same calls.)
 --drive: forward 500 mm, back 500 mm, spin 90 deg left, spin 90 deg right. Measure with a tape.
 
 Safety:
@@ -72,6 +73,7 @@ async def guarded(name, coro, seconds, stop):
 async def main(a):
     from viam.components.base import Base
     from viam.components.board import Board
+    from viam.components.generic import Generic
     from viam.components.motor import Motor
 
     real = a.machine == "real"
@@ -102,24 +104,25 @@ async def main(a):
                     pin = await board.gpio_pin_by_name(str(info["gear_pins"][side]))
                     await pin.set(level == "high")
                 print(f"gear pins {info['gear_pins']['left']}/{info['gear_pins']['right']} set to {level} (= low gear)")
-            motors = [Motor.from_robot(robot, n) for n in ("left", "right") if n in names]
             v, w = real_speeds(info)
         else:
             v, w = SIM_SPEED_MM_S, SIM_TURN_DEG_S
+        motors = [Motor.from_robot(robot, n) for n in ("left", "right") if n in names]
         print(f"speed {v:.0f} mm/s, turn {w:.1f} deg/s ({a.machine})")
 
         if a.motor_test:
-            if not real:
-                print("motor test is for the real cart only (the sim has no motors)")
-            else:
+            if real:
                 ask("MOTOR TEST: are the drive wheels OFF the floor and someone at the power switch?", a.yes)
-                for m in motors:
-                    for sign, word in ((1, "forward"), (-1, "backward")):
-                        ask(f"{m.name} {word} at power {a.power}", a.yes)
-                        await m.set_power(sign * a.power)
-                        await asyncio.sleep(MOTOR_TEST_S)
-                        await m.stop()
+            for m in motors:
+                for sign, word in ((1, "forward"), (-1, "backward")):
+                    ask(f"{m.name} {word} at power {a.power}", a.yes)
+                    await m.set_power(sign * a.power)
+                    await asyncio.sleep(MOTOR_TEST_S)
+                    await m.stop()
+                    if real:
                         print(f"  {m.name} {word}: did it turn, and which way? (write it down)")
+                    else:
+                        print(f"  {m.name} {word}: now at {await m.get_position():.3f} rev")
 
         if a.drive:
             if real:
@@ -138,7 +141,7 @@ async def main(a):
                     raise
                 await guarded(name, coro, expect_s * 1.5 + 2.0, stop_all)
                 if not real:
-                    print(f"  pose now: {await cart.do_command({'command': 'pose'})}")
+                    print(f"  pose now: {await Generic.from_robot(robot, 'odom').do_command({'command': 'pose'})}")
                 else:
                     print("  measure it now (distance / angle) and write it in the log")
         print("done")
