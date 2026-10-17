@@ -88,7 +88,13 @@ class WheelOdom(Generic, EasyResource):
         return self
 
     async def _read_rev(self):
-        return await self.left.get_position(), await self.right.get_position()
+        """Both wheels at (nearly) the same moment: left, right, left again, and the two left readings
+        averaged to the time of the right one. Reading them one after the other would make the second
+        wheel always look a little ahead while driving, which tilts the heading."""
+        l1 = await self.left.get_position()
+        r = await self.right.get_position()
+        l2 = await self.left.get_position()
+        return (l1 + l2) / 2.0, r
 
     async def _tick(self):
         async with self.lock:

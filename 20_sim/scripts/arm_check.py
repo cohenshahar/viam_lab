@@ -64,7 +64,7 @@ async def main():
         # 3. planner (S3), through arm_move: suction cup pointing down, targets in the cart frame.
         #    Same targets with the cart at two places in the room: the arm result must not depend on it,
         #    and odom (the cart's place in the room) must not change.
-        targets = [(700, 0, 700), (600, 300, 600), (650, -250, 800)]
+        targets = [(700, 0, 700), (600, 300, 600), (550, -300, 650)]
         for place in ({"x_mm": 0, "y_mm": 0, "yaw_deg": 0}, {"x_mm": -1500, "y_mm": -800, "yaw_deg": 135}):
             await odom.do_command({"command": "set_pose", **place})
             before = await odom.do_command({"command": "pose"})

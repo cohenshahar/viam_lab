@@ -468,6 +468,10 @@
     },
     "note": "Room frame. planning_box_mm = the box the arm planner avoids (margin added)."
   },
+  "visuals": {
+    "dir": "20_sim/generated/visuals",
+    "note": "CAD look only; the planner uses the boxes."
+  },
   "viam_frames": {
     "cart_parent": "world",
     "cart_geometry": {

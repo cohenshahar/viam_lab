@@ -25,7 +25,6 @@ OPERATING_POWER = 0.30     # the one power we drive at on Sunday, fraction of fu
 MIN_POWER = 0.27           # just above the dead band (report: wheels start near 69/255 = 0.27)
 MAX_POWER = 0.32           # hard cap in the motor config for the first day
 PWM_FREQ_HZ = 800          # Viam default; replace with the old code's value if the survey finds one
-SIM_TICKS_PER_REV = 1000   # fake encoder resolution in the sim (the real cart has no encoders)
 
 
 def load(p):
@@ -48,32 +47,29 @@ def frame(parent, t, orientation=None, geometry=None):
 
 def sim_config(n):
     kin = REPO / "20_sim/kinematics"
+    visuals = REPO / "20_sim/generated/visuals"
     cart, s, vf = n["cart"], n["sensors"]["frames"], n["viam_frames"]
     # Viam's world frame = the cart (decision #29). The room is not in the config: capbot_common.arm_move()
     # places it around the cart from odom before each arm move.
     cam = lambda name, parent, fr: {
         "name": name, "api": "rdk:component:camera", "model": "rdk:builtin:fake",
-        "attributes": {"width": 640, "height": 480, "model": True},
+        # no "model": with lens data the fake gradient image becomes a point cloud, drawn as a big plane in the 3D scene
+        "attributes": {"width": 640, "height": 480},
         "frame": frame(parent, fr["translation_mm"], fr["orientation"]),
     }
-    # Like the real cart: Viam's wheeled base drives motors left / right. Here they are fake
-    # motors with fake encoders (so their turns can be read), with the real cart's max_rpm.
+    # Like the real cart: Viam's wheeled base drives motors left / right. Here they are our sim motors
+    # (smooth turn count; Viam's fake encoder never counts, decision #31), with the real cart's max_rpm.
     # The wheeled base wants whole mm.
     width, circ = int(round(cart["track_width_mm"])), int(round(cart["drive_wheel_circumference_mm"]))
     max_rpm, _ = max_rpm_for(OPERATING_POWER)
-    encoder = lambda name: {"name": name, "api": "rdk:component:encoder", "model": "rdk:builtin:fake",
-                            "attributes": {"update_rate_msec": 10}}
-    motor = lambda name, enc: {"name": name, "api": "rdk:component:motor", "model": "rdk:builtin:fake",
-                               "attributes": {"encoder": enc, "ticks_per_rotation": SIM_TICKS_PER_REV,
-                                              "max_rpm": max_rpm}}
+    motor = lambda name: {"name": name, "api": "rdk:component:motor", "model": "capbot:sim:motor",
+                          "attributes": {"max_rpm": max_rpm}}
     return {
         "modules": [{"type": "local", "name": "capbot-sim-module",
                      "executable_path": str(REPO / "20_sim/modules/capbot_sim/run.sh")}],
         "components": [
-            encoder("left-enc"),
-            encoder("right-enc"),
-            motor("left", "left-enc"),
-            motor("right", "right-enc"),
+            motor("left"),
+            motor("right"),
             {"name": "cart", "api": "rdk:component:base", "model": "rdk:builtin:wheeled",
              "attributes": {"left": ["left"], "right": ["right"], "width_mm": width,
                             "wheel_circumference_mm": circ, "spin_slip_factor": 1.0},
@@ -81,8 +77,10 @@ def sim_config(n):
             {"name": "odom", "api": "rdk:component:generic", "model": "capbot:sim:wheel-odom",
              "attributes": {"left_motor": "left", "right_motor": "right",
                             "width_mm": width, "wheel_circumference_mm": circ, "tick_hz": 20}},
-            {"name": "kr6", "api": "rdk:component:arm", "model": "rdk:builtin:simulated",
-             "attributes": {"model-path": str(kin / "kr6.json"), "speed": 1.0, "simulate-time": True},
+            # our KR6 model: same kr6.json (boxes for planning) + CAD meshes for the 3D scene (decision #30)
+            {"name": "kr6", "api": "rdk:component:arm", "model": "capbot:sim:kr6",
+             "attributes": {"kinematics_path": str(kin / "kr6.json"), "visuals_dir": str(visuals),
+                            "speed_deg_per_sec": 57.3},
              "frame": frame(vf["kr6_parent"], vf["kr6_translation_mm"])},
             {"name": "vacuum", "api": "rdk:component:gripper", "model": "capbot:sim:vacuum",
              "attributes": {"tool_box_mm": {k: vf["vacuum_geometry"][k] for k in ("x", "y", "z", "translation")}},
@@ -96,6 +94,9 @@ def sim_config(n):
             {"name": "imu", "api": "rdk:component:movement_sensor", "model": "rdk:builtin:fake",
              "attributes": {}, "frame": frame("cart", s["imu"]["translation_mm"], s["imu"]["orientation"])},
         ],
+        # CAD look for the 3D scene: cart, tool and room drawn from the thesis meshes (decision #30)
+        "services": [{"name": "scene", "api": "rdk:service:world_state_store", "model": "capbot:sim:scene",
+                      "attributes": {"visuals_dir": str(visuals), "odom": "odom", "poll_hz": 10}}],
     }
 
 

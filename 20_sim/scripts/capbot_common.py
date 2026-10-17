@@ -33,7 +33,20 @@ def load_env():
 
 
 async def connect(machine="sim"):
+    # The SDK only builds clients for resource types whose code was imported before connecting,
+    # so import every type the helpers below use (arm_move needs generic + motion) here.
+    import viam.components.generic  # noqa: F401
+    import viam.services.motion  # noqa: F401
     from viam.robot.client import RobotClient
+
+    import os
+    local = os.environ.get("CAPBOT_LOCAL")
+    if local:
+        # Offline test: a viam-server started by hand with a local config (no cloud, no keys),
+        # e.g. CAPBOT_LOCAL=localhost:8081 python3 arm_check.py
+        from viam.rpc.dial import DialOptions
+        opts = RobotClient.Options(dial_options=DialOptions(insecure=True, disable_webrtc=True))
+        return await RobotClient.at_address(local, opts)
 
     prefix = {"sim": "SIM", "real": "REAL"}[machine]
     env = load_env()

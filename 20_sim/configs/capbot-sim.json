@@ -8,38 +8,18 @@
   ],
   "components": [
     {
-      "name": "left-enc",
-      "api": "rdk:component:encoder",
-      "model": "rdk:builtin:fake",
-      "attributes": {
-        "update_rate_msec": 10
-      }
-    },
-    {
-      "name": "right-enc",
-      "api": "rdk:component:encoder",
-      "model": "rdk:builtin:fake",
-      "attributes": {
-        "update_rate_msec": 10
-      }
-    },
-    {
       "name": "left",
       "api": "rdk:component:motor",
-      "model": "rdk:builtin:fake",
+      "model": "capbot:sim:motor",
       "attributes": {
-        "encoder": "left-enc",
-        "ticks_per_rotation": 1000,
         "max_rpm": 47.2
       }
     },
     {
       "name": "right",
       "api": "rdk:component:motor",
-      "model": "rdk:builtin:fake",
+      "model": "capbot:sim:motor",
       "attributes": {
-        "encoder": "right-enc",
-        "ticks_per_rotation": 1000,
         "max_rpm": 47.2
       }
     },
@@ -102,11 +82,11 @@
     {
       "name": "kr6",
       "api": "rdk:component:arm",
-      "model": "rdk:builtin:simulated",
+      "model": "capbot:sim:kr6",
       "attributes": {
-        "model-path": "/home/shahar/robotics/viam_lab/20_sim/kinematics/kr6.json",
-        "speed": 1.0,
-        "simulate-time": true
+        "kinematics_path": "/home/shahar/robotics/viam_lab/20_sim/kinematics/kr6.json",
+        "visuals_dir": "/home/shahar/robotics/viam_lab/20_sim/generated/visuals",
+        "speed_deg_per_sec": 57.3
       },
       "frame": {
         "parent": "cart",
@@ -166,8 +146,7 @@
       "model": "rdk:builtin:fake",
       "attributes": {
         "width": 640,
-        "height": 480,
-        "model": true
+        "height": 480
       },
       "frame": {
         "parent": "cart",
@@ -193,8 +172,7 @@
       "model": "rdk:builtin:fake",
       "attributes": {
         "width": 640,
-        "height": 480,
-        "model": true
+        "height": 480
       },
       "frame": {
         "parent": "cart",
@@ -220,8 +198,7 @@
       "model": "rdk:builtin:fake",
       "attributes": {
         "width": 640,
-        "height": 480,
-        "model": true
+        "height": 480
       },
       "frame": {
         "parent": "kr6",
@@ -288,6 +265,18 @@
             "th": 0.0
           }
         }
+      }
+    }
+  ],
+  "services": [
+    {
+      "name": "scene",
+      "api": "rdk:service:world_state_store",
+      "model": "capbot:sim:scene",
+      "attributes": {
+        "visuals_dir": "/home/shahar/robotics/viam_lab/20_sim/generated/visuals",
+        "odom": "odom",
+        "poll_hz": 10
       }
     }
   ]

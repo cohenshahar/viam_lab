@@ -39,11 +39,13 @@ def ov_to_matrix(ox, oy, oz, theta_deg):
     return rot_z(lon) @ rot_y(lat) @ rot_z(math.radians(theta_deg))
 
 
-def matrix_to_ov(r):
-    """Rotation matrix -> (ox, oy, oz, theta_deg), exact at the poles."""
+def matrix_to_ov(r, snap=True):
+    """Rotation matrix -> (ox, oy, oz, theta_deg), exact at the poles.
+    snap=True: within the pole radius, report the vector as exactly (0, 0, +-1) (clean numbers for configs).
+    snap=False: keep the small x / y part (as RDK reports poses); only an exact pole uses the pole branch."""
     r = np.asarray(r, dtype=float)
     ox, oy, oz = r[:, 2]
-    if 1 - abs(oz) <= POLE:
+    if (1 - abs(oz) <= POLE) if snap else (math.hypot(ox, oy) < 1e-12):
         ox, oy, oz = 0.0, 0.0, (1.0 if oz > 0 else -1.0)
         lon = 0.0
     else:

@@ -29,6 +29,7 @@ Written Thu 15 Oct 2026 after Q&A with Shahar. Old draft: `90_archive/2026-10-15
 | Thu (lab) | `30_robot/lab_day_checklist.md` (Pi access, survey, SD backup, wiring, measurements). If time: Phase 0 on stav |
 | Fri | Phases 0-5 on the home PC |
 | Sat | Phases 6-9, then Phase 10 (Sunday script run in sim) |
+| Sat (if time) / next week | Phase V (CAD look). Spikes V1-V3 can run any time; the build waits until GATE 9 |
 | Sun | Phases 11-13 at the lab with the real cart |
 
 ## Thursday status
@@ -84,7 +85,8 @@ Confirmed on the PC (Thu 15 Oct):
 - [x] [CC] `20_sim/tools/check_fk.py`: our JSON's forward kinematics vs MuJoCo at 50 random joint sets. Pass < 0.1 mm / 0.01 deg.
 - [x] [CC] Arm `kr6` in capbot-sim: `rdk:builtin:simulated`, `model-path` absolute, frame parent `cart`, mount from the numbers (`make_configs.py`).
 - [x] [CC] `20_sim/scripts/arm_check.py`: named poses -> `get_end_position` vs our kinematics -> cart trick (S2) -> `motion.move` in `cart` (S3). *(written Thu, run Fri)*
-- [ ] **GATE 3:** arm_check pass; 3D scene: arm on the cart, right place, right way round. Commit.
+- [x] **GATE 3:** arm_check PASS (Thu 15 Oct, after decision #29): 7 joint poses 0.0000 mm; cart = world; 3 targets reached
+      (0.000 mm) with the cart at 2 room places; odom unchanged. Commit.
 
 ## Phase 4 - Cart (same name `cart` as the real one)
 - [x] ~~`cart-pose` fake arm (cart trick)~~ archived, decision #29 (`90_archive/2026-10-15_cart_pose_trick/`).
@@ -99,7 +101,7 @@ Confirmed on the PC (Thu 15 Oct):
       (kr6, lidar, cameras, imu) parent `cart`.
 - [x] [CC] `20_sim/scripts/base_check.py`: 1 m square; odom back at start within 1 mm / 0.1 deg; wheel turns match the
       wheeled-base math within 0.01 rev. *(written Thu, run Fri)*
-- [ ] **GATE 4:** square closes; wheel turns right. Commit.
+- [x] **GATE 4:** square closes; wheel turns right. Commit. *(live PASS Sat 17: 0.22 mm, wheel turns exact)*
 
 ## Phase 5 - Vacuum tool
 - [x] [CC] Gripper `vacuum` (`capbot:sim:vacuum`): `grab` = suction on, `open` = off, `is_holding`, `stop`; tool box served as a no-joint kinematics model.
@@ -112,7 +114,7 @@ Confirmed on the PC (Thu 15 Oct):
 - [x] [CC] Cameras `cam-front`, `cam-rear`, `cam-wrist` (fake, `model: true`), frames from the numbers (turned to Viam's camera habit).
 - [x] [CC] `lidar` (fake camera = point cloud), `imu` (fake movement sensor), frames on the cart from the numbers.
 - [x] [CC] `20_sim/scripts/sensors_check.py`: read every sensor once, print shapes/values, save one image. *(written Thu, run Fri)*
-- [ ] **GATE 6:** all readable; frames right in the 3D scene. Commit.
+- [ ] **GATE 6:** all readable; frames right in the 3D scene. Commit. *(sensors_check PASS offline Sat 17)*
 
 ## Phase 7 - Lab world
 - [x] [CC] Room boxes generated from the thesis lab (4 pillars, table, cabinet, floor, +30 mm margin) into `robot_numbers.json`;
@@ -122,7 +124,7 @@ Confirmed on the PC (Thu 15 Oct):
 - [x] ~~[S] fragment `lab-world` on capbot-sim~~ dropped (decision #29).
 - [ ] [CC] Named places as data: `20_sim/configs/locations.json` (home, table pick spot, place spot).
 - [x] [CC] `20_sim/scripts/world_check.py`: above the table -> planned; inside the table / cabinet -> refused. *(written Thu, run Fri)*
-- [ ] **GATE 7:** world_check behaves (above the table planned; inside table / cabinet refused). Commit.
+- [x] **GATE 7:** world_check behaves (above the table planned; inside table / cabinet refused). Commit. *(live PASS Sat 17, side approach; refusals are real collisions)*
 
 ## Phase 8 - Primitives: Viam first, DoCommand for gaps
 - [x] [CC] `20_sim/primitive_map.md` (draft written Thu) from CaP_Thesis `docs/Research_API_Inventory_2026-09-03.md` + primitive survey. Draft:
@@ -156,6 +158,38 @@ Confirmed on the PC (Thu 15 Oct):
 - [ ] [S] Run 5 times; screen-capture one run in the 3D scene for the log.
 - [ ] [CC] Export configs to `20_sim/configs/` (capbot-sim.json, fragments; no secrets). READMEs in plain words.
 - [ ] **GATE 9:** demo 5/5; a fresh clone + README rebuilds it. Commit "Gate 9".
+
+## Phase V - CAD look in the 3D scene (decision #30)
+Goal: the 3D scene shows the real KR6, cart, tool, room and picked box at CAD level, in the thesis colours.
+The planner keeps the simple boxes (fast and safe); the meshes are for looking only. No MuJoCo physics or rendering
+(that stays the later bridge, decision #11).
+
+How Viam draws things (checked 15 Oct in the docs + RDK source, main):
+- **Arm API `get_3d_models`** returns one mesh per link (GLB). Viam's fake arm ships GLBs for UR5e / UR20 / xArm / lite6 only
+  (rdk `components/arm/fake/3d_models`); the built-in simulated arm has nothing for a KR6 -> we serve our own.
+- **World state store service** (Python SDK 0.84 has it: `viam.services.worldstatestore`) publishes visual-only shapes:
+  box / sphere / mesh (PLY; "convert an STL file to PLY first"), colours, see-through; re-sending the same UUID moves it.
+  Docs: visualization/visuals-and-collisions, publish-visuals-from-a-module, reference/geometry-constructors.
+- URDF collision meshes (STL / PLY) would also draw, but then the planner checks every triangle (slower) -> not our route.
+- No URDF needed: the thesis MuJoCo model already places every STL on its link, with colours. STLs: CaP_Thesis
+  `sim/rig/assets/urdf/meshes/` (KR6 links) and `sim/cart_kr6/meshes/` (cart). (No .urdf file is in CaP_Thesis.)
+
+Spikes (30-45 min, before building):
+- [x] V1 `get_3d_models`: which key does the 3D scene match (link id in `kr6.json`?) and in which frame / units is the mesh
+      drawn? Test: a small module arm serving one coloured cube GLB on `link_2`. **(verify)** -> answered from source (Sat 17): key = kinematics link id, drawn at the link box centre, metres.
+- [x] V2 World state store from a Python module: one coloured PLY box parented to `cart`; re-send with a new pose -> it moves. **(verify)** -> PLY/STL, metres, vertex colours; stream must open with an empty message (viam-server drops the first).
+- [x] V3 Is GLB or PLY lighter for the scene with ~1 MB of KR6 STL? Do the meshes need thinning (decimation)? **(verify)** -> GLB per arm link (32k tris total) and PLY parts (< 1 MB each); no thinning needed.
+
+Build:
+- [x] [CC] `build_viam_files.py` also exports, from the compiled thesis MuJoCo model: each KR6 link's meshes in that link's
+      Viam frame, the cart meshes in the `cart` frame, the vacuum tool, with the MuJoCo colours ->
+      `20_sim/generated/visuals/` (generated, never edited by hand).
+- [x] [CC] Module arm `capbot:sim:kr6` in place of `rdk:builtin:simulated`: same `kr6.json` for planning (boxes), timed joint
+      moves like `simulate-time`, `get_3d_models` = the link meshes. `arm_check` must still PASS.
+- [x] [CC] Module service `capbot:sim:scene` (world state store): cart body meshes; the room (pillars, table, cabinet, floor)
+      placed around the cart from `odom`, kept live as the cart drives; the picked box (rides on the tool while held). (done except the picked box: comes with GATE 5)
+- [x] [S] Look: 3D scene checked by Shahar.
+- [x] **GATE V:** *(Sat 17: Shahar OK; GATE 3/4/7 live PASS)* arm, cart, tool, room and box look like the thesis model; GATE 3 / 4 / 7 checks still PASS. Commit.
 
 ## Phase 10 - Sunday script, proven in sim (Sat evening)
 - [x] [CC] `30_robot/scripts/cart_sunday.py` (written Thu) - one script, two machines (pick with `--machine sim|real`, address/key from `.env`):
