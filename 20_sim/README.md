@@ -16,7 +16,7 @@ capbot = the lab cart with the KUKA KR6 and the suction tool. Viam machine **cap
 | `generated/visuals/` | CAD meshes for the 3D scene (KR6 link GLBs; tool / cart / room PLYs, metres) | **no, generated** |
 | `configs/locations.json` | named cart places, the crates, the pick station and the pallet slots (room frame) | **no, generated** |
 | `configs/lab_changes.json` | Shahar's changes to the thesis lab for the sim (table height, crate pallet) | yes |
-| `modules/capbot_sim/` | local module: `capbot:sim:kr6` (arm + CAD meshes), `capbot:sim:motor` (drive motors), `capbot:sim:wheel-odom` (`odom`), `capbot:sim:vacuum` (tool), `capbot:sim:scene` (3D scene shapes), `capbot:sim:cap` (the thesis verbs) | yes (code) |
+| `modules/capbot_sim/` | local module: `capbot:sim:kr6` (arm + CAD meshes), `capbot:sim:motor` (drive motors), `capbot:sim:wheel-odom` (`odom`), `capbot:sim:vacuum` (tool), `capbot:sim:scene` (3D scene shapes), `capbot:sim:cap` (the thesis verbs), `capbot:sim:camera` (test image, no point cloud) | yes (code) |
 | `scripts/capbot_common.py` | connect, numbers, and `arm_move()`: every arm move goes through it | yes (code) |
 | `scripts/*_check.py` | one check per gate | yes (code) |
 | `primitive_map.md` | thesis primitives -> Viam calls / our verbs | yes |
@@ -81,6 +81,14 @@ cd 20_sim/scripts
 ../../.venv-linux/bin/python sensor_snapshot.py               # what the sensors report (saved to out/)
 ```
 
+## The arm arena (machine armtable-sim, decision #38)
+The arm-table rig from the thesis (`CaP_Thesis/sim/rig`): one KR6 with the vacuum tool on the 2 x 2 m table inside
+the cage, and one box. `tools/build_arena_files.py` makes `generated/arena/` (mount, obstacles, box, CAD look);
+`make_configs.py` makes `configs/armtable-sim.json` and the real draft `30_robot/configs/armtable_DRAFT.json`
+(open questions: `30_robot/configs/armtable_TODO.md`). Run the machine next to capbot-sim with
+`scripts/run_armtable_sim.sh`; the demo: `scripts/arena_demo.py --cycles 3` (pick the box, put it on the place
+spot, back again; collision audit after each step). Connection keys: `ARENA_*` in `20_sim/.env`.
+
 ## The demo and the verbs
 `cap` (a generic service) holds the thesis primitives Viam lacks, as DoCommand verbs (`20_sim/primitive_map.md`):
 `await cap.do_command({"command": "pick", "box": "box1"})`. From a script: `capbot_common.cap(robot, "pick", box="box1")`.
@@ -110,6 +118,6 @@ add `"network": {"bind_address": "localhost:8081"}` to a copy of `capbot-sim.jso
 ## Known limits
 - The thesis lab room is a sketch, not measured (`CaP_Thesis/sim/worlds/lab/README.md`).
 - The wrist camera sits on link 5 in the thesis; in Viam it hangs on the arm's end, so it turns with joint a6.
-- Sensors return fake data this week.
+- Sensors return fake data this week. The sim cameras give a grey test picture and no point cloud (decision #39).
 - The room is not drawn in the 3D scene (it is sent with each arm move).
 - The fake motors skip `min_power_pct` / `max_power_pct`; the real cart's slowest speeds will be faster than asked.

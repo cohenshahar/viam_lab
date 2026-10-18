@@ -26,6 +26,8 @@ Verbs (lengths mm, angles deg; frame "world" = the cart frame (decision #29), "r
 
 Attributes (all paths absolute on this computer; written by make_configs.py):
   numbers_path, kinematics_path, locations_path
+  has_cart (true): false for a fixed arm (the arm arena): no cart / odom; drive verbs refuse
+  world_path: a fixed arm's room (obstacles + kr6_mount_mm), e.g. 20_sim/generated/arena/arena_numbers.json
   drive_speed_mm_per_sec (250), turn_speed_deg_per_sec (45), standoff_mm (100), lift_mm (30),
   retreat_mm (150), verb_timeout_sec (120), dock_mm (250: back out / drive in straight around spins),
   carry_tcp_mm ([350, 0, 1000]: cup position, tool down, while driving with a crate)
@@ -63,7 +65,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tools"))
 import viam_frames as vf  # noqa: E402
 
 LOGGER = getLogger(__name__)
-DEPS = ["kr6", "cart", "vacuum", "odom", "builtin"]
+DEPS = ["kr6", "vacuum", "builtin"]          # + "cart", "odom" when has_cart (the default)
 CART_FOOTPRINT_MM = (-570.0, 518.0, -350.0, 350.0)   # cart outline in its own frame (mesh bounds); the arm stays
                                                      # inside it while driving (folded, or the carry pose)
 # Shape pairs the planner may let touch (same list as capbot_common.arm_constraints):
@@ -113,16 +115,19 @@ class Cap(Generic, EasyResource):
                     "verb_timeout_sec"):
             if key in attrs and (not isinstance(attrs[key], (int, float)) or attrs[key] <= 0):
                 raise ValueError(f"{key} must be a number greater than zero")
-        return DEPS, []
+        if "world_path" in attrs and (not isinstance(attrs["world_path"], str) or not Path(attrs["world_path"]).exists()):
+            raise ValueError("world_path must be an absolute path that exists on this computer")
+        return DEPS + (["cart", "odom"] if attrs.get("has_cart", True) else []), []
 
     @classmethod
     def new(cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         self = super().new(config, dependencies)
         a = struct_to_dict(config.attributes)
         self.arm = dependencies[Arm.get_resource_name("kr6")]
-        self.cart = dependencies[Base.get_resource_name("cart")]
+        self.has_cart = bool(a.get("has_cart", True))
+        self.cart = dependencies[Base.get_resource_name("cart")] if self.has_cart else None
         self.vacuum = dependencies[Gripper.get_resource_name("vacuum")]
-        self.odom = dependencies[GenericComponent.get_resource_name("odom")]
+        self.odom = dependencies[GenericComponent.get_resource_name("odom")] if self.has_cart else None
         self.motion = dependencies[Motion.get_resource_name("builtin")]
         self.numbers = json.loads(Path(a["numbers_path"]).read_text())
         self.kr6 = json.loads(Path(a["kinematics_path"]).read_text())
@@ -130,6 +135,11 @@ class Cap(Generic, EasyResource):
         self.locations = json.loads(self.locations_path.read_text())
         vfr = self.numbers["viam_frames"]
         self.mount = vf.pose(t=np.array(vfr["kr6_translation_mm"], float))
+        # a fixed arm (the arm arena): its own room and mount, in Viam's world frame (= the room)
+        if a.get("world_path"):
+            w = json.loads(Path(a["world_path"]).read_text())
+            self.numbers = {**self.numbers, "world": {"obstacles": w["obstacles"]}}
+            self.mount = vf.pose(t=np.array(w["kr6_mount_mm"], float))
         self.tcp = vf.pose(t=np.array(vfr["vacuum_translation_mm"], float))
         self.named = {k: v for k, v in self.numbers["named_arm_poses_deg"].items() if k != "source"}
         self.v = float(a.get("drive_speed_mm_per_sec", 250))
@@ -150,6 +160,8 @@ class Cap(Generic, EasyResource):
     # ---- where things are ----------------------------------------------------------------------
 
     async def _cart_pose(self) -> Dict[str, float]:
+        if not self.has_cart:   # fixed arm: the "cart" frame is the room
+            return {"x_mm": 0.0, "y_mm": 0.0, "yaw_deg": 0.0}
         p = await self.odom.do_command({"command": "pose"})
         return {"x_mm": p["x_mm"], "y_mm": p["y_mm"], "yaw_deg": p["yaw_deg"]}
 
@@ -250,7 +262,8 @@ class Cap(Generic, EasyResource):
                 "arm_joints_deg": [round(x, 3) for x in (await self.arm.get_joint_positions()).values],
                 "tcp_in_cart_mm": [round(float(x), 1) for x in t[:3, 3]],
                 "holding": (await self.vacuum.is_holding_something()).is_holding_something,
-                "boxes": {n: ("held" if b.held else "waiting" if b.waiting else b.room) for n, b in WORLD.boxes.items()}}
+                "boxes": {n: ("held" if b.held else "waiting" if b.waiting else b.room) for n, b in WORLD.boxes.items()},
+                "box_sizes_mm": {n: b.size_mm for n, b in WORLD.boxes.items()}, "has_cart": self.has_cart}
 
     async def v_locations(self, cmd):
         return {"ok": True, "places": self.locations["places"], "box_spots": self.locations.get("box_spots", {}),
@@ -337,7 +350,8 @@ class Cap(Generic, EasyResource):
                               step="lift off the table")                        # 5. straight up (it touches the table)
         await self._move_tool(_down(cm.along(top, up, self.standoff), theta), linear=True,
                               step="up with the crate")                          # 6. up, crate modeled
-        await self._carry()                                                     # 7. carry pose over the cart
+        if self.has_cart:
+            await self._carry()                                                 # 7. carry pose over the cart
         return {"ok": True, "box": name, "holding": (await self.vacuum.is_holding_something()).is_holding_something}
 
     def _next_at_station(self):
@@ -398,6 +412,8 @@ class Cap(Generic, EasyResource):
         (Viam's planner does not plan a base), then turn / straight moves with docking."""
         if self.estopped:
             raise Refused("e-stop is on: call release_estop first")
+        if not self.has_cart:
+            raise Refused("this machine has no cart")
         start = await self._cart_pose()
         # back out as far as the place we are at asks (side-on spots need long run-ins), drive in as the goal asks
         here = next((p for p in self.locations["places"].values()
@@ -431,6 +447,8 @@ class Cap(Generic, EasyResource):
     async def v_drive_arc(self, cmd):
         if self.estopped:
             raise Refused("e-stop is on: call release_estop first")
+        if not self.has_cart:
+            raise Refused("this machine has no cart")
         try:
             v, w, secs = cm.arc_plan(_num(cmd, "radius_mm"), _num(cmd, "angle_deg"), _num(cmd, "speed_mm_per_sec", self.v))
         except ValueError as e:
@@ -459,7 +477,8 @@ class Cap(Generic, EasyResource):
         if self.running and not self.running.done():
             self.running.cancel()
         await self.arm.stop()
-        await self.cart.stop()
+        if self.cart:
+            await self.cart.stop()
         return {"ok": True, "estop": True}
 
     async def v_release_estop(self, cmd):
@@ -494,7 +513,8 @@ class Cap(Generic, EasyResource):
             return {"error": str(e), "needs_clarification": False}
         except asyncio.TimeoutError:
             await self.arm.stop()
-            await self.cart.stop()
+            if self.cart:
+                await self.cart.stop()
             return {"error": f"{verb} took longer than {self.timeout:.0f} s; arm and cart stopped", "needs_clarification": False}
         except asyncio.CancelledError:
             return {"error": f"{verb} stopped by e-stop", "needs_clarification": False}

@@ -52,8 +52,9 @@ def sim_config(n):
     # Viam's world frame = the cart (decision #29). The room is not in the config: capbot_common.arm_move()
     # places it around the cart from odom before each arm move.
     cam = lambda name, parent, fr: {
-        "name": name, "api": "rdk:component:camera", "model": "rdk:builtin:fake",
-        # no "model": with lens data the fake gradient image becomes a point cloud, drawn as a big plane in the 3D scene
+        # capbot:sim:camera: a test image and no point cloud (every rdk:builtin:fake camera serves a sample
+        # point cloud, drawn as a big blue / yellow plane in the 3D scene)
+        "name": name, "api": "rdk:component:camera", "model": "capbot:sim:camera",
         "attributes": {"width": 640, "height": 480},
         "frame": frame(parent, fr["translation_mm"], fr["orientation"]),
     }
@@ -162,6 +163,67 @@ def locations(n):
     return out
 
 
+ARENA = REPO / "20_sim/generated/arena/arena_numbers.json"
+ARENA_PORT = 8082          # second viam-server on the same PC as capbot-sim (which uses 8080)
+
+
+def arena_components(n, a, arm):
+    """The arm arena's parts, shared by the sim and the real config: the same names on both (like the cart)."""
+    vf = n["viam_frames"]
+    obstacles = [{"name": name, "api": "rdk:component:generic", "model": "rdk:builtin:fake", "attributes": {},
+                  "frame": frame("world", [(o["planning_box_mm"]["min"][i] + o["planning_box_mm"]["max"][i]) / 2 for i in range(3)],
+                                 geometry={"type": "box", **{k: round(o["planning_box_mm"]["max"][i] - o["planning_box_mm"]["min"][i], 1)
+                                                             for i, k in enumerate("xyz")}})}
+                 for name, o in a["obstacles"].items()]
+    return [{**arm, "frame": frame("world", a["kr6_mount_mm"])},
+            {"name": "vacuum", "api": "rdk:component:gripper", "model": "capbot:sim:vacuum",
+             "attributes": {"tool_box_mm": {k: vf["vacuum_geometry"][k] for k in ("x", "y", "z", "translation")}},
+             "frame": frame("kr6", vf["vacuum_translation_mm"])},
+            # the thesis wrist camera (fake image in the sim; a real camera on the arm-table later)
+            {"name": "cam-wrist", "api": "rdk:component:camera", "model": "capbot:sim:camera",
+             "attributes": {"width": 640, "height": 480},
+             "frame": frame("kr6", n["sensors"]["frames"]["rgbd_wrist_on_flange"]["translation_mm"],
+                            n["sensors"]["frames"]["rgbd_wrist_on_flange"]["orientation"])}] + [
+        # the rig's room cameras Shahar kept (roof, front, right); fake images in the sim
+        {"name": name, "api": "rdk:component:camera", "model": "capbot:sim:camera",
+         "attributes": {"width": 640, "height": 480},
+         "frame": frame("world", c["translation_mm"], c["orientation"])}
+        for name, c in a.get("cameras", {}).items()] + obstacles
+
+
+def arena_sim_config(n, a):
+    """capbot arm arena in Viam's sim (decision #38): one KR6 on the rig table, one box."""
+    kin, vis = REPO / "20_sim/kinematics", REPO / "20_sim/generated/arena/visuals"
+    arm = {"name": "kr6", "api": "rdk:component:arm", "model": "capbot:sim:kr6",
+           "attributes": {"kinematics_path": str(kin / "kr6.json"), "visuals_dir": str(vis), "speed_deg_per_sec": 57.3}}
+    return {
+        "network": {"bind_address": f":{ARENA_PORT}"},
+        "modules": [{"type": "local", "name": "capbot-sim-module",
+                     "executable_path": str(REPO / "20_sim/modules/capbot_sim/run.sh")}],
+        "components": arena_components(n, a, arm),
+        "services": [{"name": "scene", "api": "rdk:service:world_state_store", "model": "capbot:sim:scene",
+                      "attributes": {"visuals_dir": str(vis), "odom": "", "poll_hz": 10}},
+                     {"name": "cap", "api": "rdk:service:generic", "model": "capbot:sim:cap",
+                      "attributes": {"numbers_path": str(NUMBERS), "kinematics_path": str(kin / "kr6.json"),
+                                     "locations_path": str(ARENA), "world_path": str(ARENA), "has_cart": False,
+                                     "standoff_mm": 100, "lift_mm": 30, "retreat_mm": 150, "verb_timeout_sec": 120}}],
+    }
+
+
+def arena_real_config(n, a):
+    """DRAFT for the real arm-table: the same part names, the real KR6 through the Viam KUKA module.
+    Not ready to paste: see 30_robot/configs/armtable_TODO.md for what is still unknown."""
+    arm = {"name": "kr6", "api": "rdk:component:arm", "model": "viam-soleng:arm:viam-kuka",
+           "attributes": {"ip_address": "0.0.0.0", "port": 54610, "model": "KR6", "safe_mode": True, "joint_speed": 5}}
+    comps = arena_components(n, a, arm)
+    for c in comps:  # no local module on the real machine: placeholder cameras until the real ones are picked
+        if c["model"] == "capbot:sim:camera":
+            c["model"] = "rdk:builtin:fake"
+    return {"modules": [{"type": "registry", "name": "viam-soleng_viam-kuka", "module_id": "viam-soleng:viam-kuka",
+                         "version": "latest"}],
+            "components": comps}
+
+
 def max_rpm_for(power):
     """Viam maps rpm -> power as power = rpm / max_rpm (no offset). Pick max_rpm so that
     the rpm the report measured at `power` gives back exactly that power."""
@@ -235,6 +297,11 @@ def write(path, data):
 def main():
     n = load(NUMBERS)
     out = REPO / "20_sim/configs"
+    if ARENA.exists():   # the arm arena (build_arena_files.py)
+        arena = load(ARENA)
+        write(out / "armtable-sim.json", arena_sim_config(n, arena))
+        (REPO / "30_robot/configs").mkdir(parents=True, exist_ok=True)
+        write(REPO / "30_robot/configs/armtable_DRAFT.json", arena_real_config(n, arena))
     write(out / "locations.json", locations(n))
     write(out / "capbot-sim.json", sim_config(n))
     real, info = real_config(n)

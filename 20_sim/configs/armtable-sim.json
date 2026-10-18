@@ -1,0 +1,468 @@
+{
+  "network": {
+    "bind_address": ":8082"
+  },
+  "modules": [
+    {
+      "type": "local",
+      "name": "capbot-sim-module",
+      "executable_path": "/home/shahar/robotics/viam_lab/20_sim/modules/capbot_sim/run.sh"
+    }
+  ],
+  "components": [
+    {
+      "name": "kr6",
+      "api": "rdk:component:arm",
+      "model": "capbot:sim:kr6",
+      "attributes": {
+        "kinematics_path": "/home/shahar/robotics/viam_lab/20_sim/kinematics/kr6.json",
+        "visuals_dir": "/home/shahar/robotics/viam_lab/20_sim/generated/arena/visuals",
+        "speed_deg_per_sec": 57.3
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -450.0,
+          "y": -600.0,
+          "z": 750.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "vacuum",
+      "api": "rdk:component:gripper",
+      "model": "capbot:sim:vacuum",
+      "attributes": {
+        "tool_box_mm": {
+          "x": 70.0,
+          "y": 70.0,
+          "z": 436.0,
+          "translation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": -223.0
+          }
+        }
+      },
+      "frame": {
+        "parent": "kr6",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 491.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-wrist",
+      "api": "rdk:component:camera",
+      "model": "capbot:sim:camera",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "kr6",
+        "translation": {
+          "x": -66.0,
+          "y": 0.0,
+          "z": -50.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.121076029,
+            "y": 0.0,
+            "z": 0.992643237,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-roof",
+      "api": "rdk:component:camera",
+      "model": "capbot:sim:camera",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1948.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -1.0,
+            "th": 180.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-front",
+      "api": "rdk:component:camera",
+      "model": "capbot:sim:camera",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 2000.0,
+          "z": 1500.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.0,
+            "y": -0.936333287,
+            "z": -0.351112482,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-right",
+      "api": "rdk:component:camera",
+      "model": "capbot:sim:camera",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 2000.0,
+          "y": 0.0,
+          "z": 1500.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": -0.936333287,
+            "y": 0.0,
+            "z": -0.351112482,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "tabletop",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 710.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 2060.0,
+          "y": 2060.0,
+          "z": 80.0
+        }
+      }
+    },
+    {
+      "name": "fence-front",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": -980.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 1980.0,
+          "y": 100.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "fence-back",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 980.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 1980.0,
+          "y": 100.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "fence-left",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -980.0,
+          "y": 0.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 1980.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "fence-right",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 980.0,
+          "y": 0.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 1980.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "post-fl",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -980.0,
+          "y": 980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    },
+    {
+      "name": "post-fr",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 980.0,
+          "y": 980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    },
+    {
+      "name": "post-bl",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -980.0,
+          "y": -980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    },
+    {
+      "name": "post-br",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 980.0,
+          "y": -980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    }
+  ],
+  "services": [
+    {
+      "name": "scene",
+      "api": "rdk:service:world_state_store",
+      "model": "capbot:sim:scene",
+      "attributes": {
+        "visuals_dir": "/home/shahar/robotics/viam_lab/20_sim/generated/arena/visuals",
+        "odom": "",
+        "poll_hz": 10
+      }
+    },
+    {
+      "name": "cap",
+      "api": "rdk:service:generic",
+      "model": "capbot:sim:cap",
+      "attributes": {
+        "numbers_path": "/home/shahar/robotics/viam_lab/20_sim/generated/robot_numbers.json",
+        "kinematics_path": "/home/shahar/robotics/viam_lab/20_sim/kinematics/kr6.json",
+        "locations_path": "/home/shahar/robotics/viam_lab/20_sim/generated/arena/arena_numbers.json",
+        "world_path": "/home/shahar/robotics/viam_lab/20_sim/generated/arena/arena_numbers.json",
+        "has_cart": false,
+        "standoff_mm": 100,
+        "lift_mm": 30,
+        "retreat_mm": 150,
+        "verb_timeout_sec": 120
+      }
+    }
+  ]
+}

@@ -3,20 +3,22 @@
 #
 #   20_sim/scripts/record_demo.sh laptop 8     record the laptop screen, 8 crates
 #   20_sim/scripts/record_demo.sh hdmi 2       record the HDMI monitor, 2 crates
+#   20_sim/scripts/record_demo.sh laptop 3 arena   the arm arena (armtable-sim): 3 pick-and-place cycles
 #
-# Before: open capbot-sim -> 3D SCENE on that screen, press F11, set the view. Do not touch the mouse while it runs.
+# Before: open capbot-sim (or armtable-sim for arena) -> 3D SCENE on that screen, press F11, set the view. Do not touch the mouse while it runs.
 # Output (not in git): 20_sim/scripts/out/demo_<date>_full.mp4 and demo_<date>_4x.mp4
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCREEN="${1:-laptop}"
 CRATES="${2:-8}"
+WHAT="${3:-cart}"
 case "$SCREEN" in
   laptop) SIZE=1920x1080; AT=":0.0+0,0" ;;
   hdmi)   SIZE=1680x1050; AT=":0.0+1920,0" ;;
   *) echo "screen must be laptop or hdmi" >&2; exit 1 ;;
 esac
 mkdir -p "$HERE/out"
-STAMP="$(date +%Y-%m-%d_%H%M)"
+STAMP="${WHAT}_$(date +%Y-%m-%d_%H%M)"
 FULL="$HERE/out/demo_${STAMP}_full.mp4"
 FAST="$HERE/out/demo_${STAMP}_4x.mp4"
 
@@ -26,7 +28,11 @@ ffmpeg -hide_banner -loglevel error -y -f x11grab -framerate 25 -video_size "$SI
 REC=$!
 sleep 3   # a moment of the start position
 cd "$HERE"
-../../.venv-linux/bin/python demo_pick_place.py --crates "$CRATES" 2>&1 | grep -v INFO || true
+case "$WHAT" in
+  cart)  ../../.venv-linux/bin/python demo_pick_place.py --crates "$CRATES" 2>&1 | grep -v INFO || true ;;
+  arena) ../../.venv-linux/bin/python arena_demo.py --cycles "$CRATES" 2>&1 | grep -v INFO || true ;;
+  *) echo "what must be cart or arena" >&2 ;;
+esac
 sleep 3
 kill -INT "$REC"   # ffmpeg closes the file cleanly on Ctrl+C
 wait "$REC" || true

@@ -1,0 +1,440 @@
+{
+  "modules": [
+    {
+      "type": "registry",
+      "name": "viam-soleng_viam-kuka",
+      "module_id": "viam-soleng:viam-kuka",
+      "version": "latest"
+    }
+  ],
+  "components": [
+    {
+      "name": "kr6",
+      "api": "rdk:component:arm",
+      "model": "viam-soleng:arm:viam-kuka",
+      "attributes": {
+        "ip_address": "0.0.0.0",
+        "port": 54610,
+        "model": "KR6",
+        "safe_mode": true,
+        "joint_speed": 5
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -450.0,
+          "y": -600.0,
+          "z": 750.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "vacuum",
+      "api": "rdk:component:gripper",
+      "model": "capbot:sim:vacuum",
+      "attributes": {
+        "tool_box_mm": {
+          "x": 70.0,
+          "y": 70.0,
+          "z": 436.0,
+          "translation": {
+            "x": -0.0,
+            "y": 0.0,
+            "z": -223.0
+          }
+        }
+      },
+      "frame": {
+        "parent": "kr6",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 491.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-wrist",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "kr6",
+        "translation": {
+          "x": -66.0,
+          "y": 0.0,
+          "z": -50.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.121076029,
+            "y": 0.0,
+            "z": 0.992643237,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-roof",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 1948.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": -1.0,
+            "th": 180.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-front",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 2000.0,
+          "z": 1500.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0.0,
+            "y": -0.936333287,
+            "z": -0.351112482,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "cam-right",
+      "api": "rdk:component:camera",
+      "model": "rdk:builtin:fake",
+      "attributes": {
+        "width": 640,
+        "height": 480
+      },
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 2000.0,
+          "y": 0.0,
+          "z": 1500.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": -0.936333287,
+            "y": 0.0,
+            "z": -0.351112482,
+            "th": -90.0
+          }
+        }
+      }
+    },
+    {
+      "name": "tabletop",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 710.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 2060.0,
+          "y": 2060.0,
+          "z": 80.0
+        }
+      }
+    },
+    {
+      "name": "fence-front",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": -980.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 1980.0,
+          "y": 100.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "fence-back",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 0.0,
+          "y": 980.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 1980.0,
+          "y": 100.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "fence-left",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -980.0,
+          "y": 0.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 1980.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "fence-right",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 980.0,
+          "y": 0.0,
+          "z": 770.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 1980.0,
+          "z": 100.0
+        }
+      }
+    },
+    {
+      "name": "post-fl",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -980.0,
+          "y": 980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    },
+    {
+      "name": "post-fr",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 980.0,
+          "y": 980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    },
+    {
+      "name": "post-bl",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": -980.0,
+          "y": -980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    },
+    {
+      "name": "post-br",
+      "api": "rdk:component:generic",
+      "model": "rdk:builtin:fake",
+      "attributes": {},
+      "frame": {
+        "parent": "world",
+        "translation": {
+          "x": 980.0,
+          "y": -980.0,
+          "z": 1350.0
+        },
+        "orientation": {
+          "type": "ov_degrees",
+          "value": {
+            "x": 0,
+            "y": 0,
+            "z": 1,
+            "th": 0
+          }
+        },
+        "geometry": {
+          "type": "box",
+          "x": 100.0,
+          "y": 100.0,
+          "z": 1260.0
+        }
+      }
+    }
+  ]
+}

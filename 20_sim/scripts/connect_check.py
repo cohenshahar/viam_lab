@@ -22,5 +22,5 @@ async def main(machine):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--machine", choices=["sim", "real"], default="sim")
+    ap.add_argument("--machine", choices=["sim", "real", "arena"], default="sim")
     asyncio.run(main(ap.parse_args().machine))

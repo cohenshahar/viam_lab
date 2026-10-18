@@ -50,12 +50,16 @@ async def connect(machine="sim"):
         opts = RobotClient.Options(dial_options=DialOptions(insecure=True, disable_webrtc=True))
         return await RobotClient.at_address(local, opts)
 
-    prefix = {"sim": "SIM", "real": "REAL"}[machine]
+    prefix = {"sim": "SIM", "real": "REAL", "arena": "ARENA"}[machine]
     env = load_env()
     try:
         address, key, key_id = env[f"{prefix}_ADDRESS"], env[f"{prefix}_API_KEY"], env[f"{prefix}_API_KEY_ID"]
     except KeyError as e:
         sys.exit(f"20_sim/.env is missing {e}")
+    import re
+    m = re.search(r"([a-z0-9-]+\.[a-z0-9]+\.viam\.cloud)", address)
+    if m and m.group(1) != address:   # the whole code line was pasted, e.g. RobotClient.at_address('...', opts)
+        address = m.group(1)
     opts = RobotClient.Options.with_api_key(api_key=key, api_key_id=key_id)
     return await RobotClient.at_address(address, opts)
 
@@ -193,9 +197,16 @@ async def collision_audit(robot, shrink_mm=2.0):
     n, kr6 = numbers(), kinematics("kr6")
     st = await cap(robot, "status")
     cart = st["cart"]
+    has_cart = st.get("has_cart", True)
+    sizes = st.get("box_sizes_mm", {})
+    if not has_cart:   # fixed arm (the arm arena): its own mount and room, in the world frame
+        arena = json.loads((REPO / "20_sim/generated/arena/arena_numbers.json").read_text())
+        world_obstacles, mount_mm = arena["obstacles"], arena["kr6_mount_mm"]
+    else:
+        world_obstacles, mount_mm = n["world"]["obstacles"], n["viam_frames"]["kr6_translation_mm"]
     q = list((await Arm.from_robot(robot, "kr6").get_joint_positions()).values)
     fk = vf.sva_fk(kr6, q)
-    mount = vf.pose(t=np.array(n["viam_frames"]["kr6_translation_mm"], float))
+    mount = vf.pose(t=np.array(mount_mm, float))
     tcp = mount @ fk["flange"] @ vf.pose(t=np.array(n["viam_frames"]["vacuum_translation_mm"], float))
     s = shrink_mm
     parts = {}
@@ -206,19 +217,20 @@ async def collision_audit(robot, shrink_mm=2.0):
                                                    [g["translation"][k] for k in "xyz"])
     tg = n["viam_frames"]["vacuum_geometry"]
     parts["tool"] = _box_corners(tcp, [tg["x"] - s, tg["y"] - s, tg["z"] - s], [tg["translation"][k] for k in "xyz"])
-    cg = n["viam_frames"]["cart_geometry"]
-    parts["cart body"] = _box_corners(np.eye(4), [cg["x"] - s, cg["y"] - s, cg["z"] - s], [cg["translation"][k] for k in "xyz"])
+    if has_cart:
+        cg = n["viam_frames"]["cart_geometry"]
+        parts["cart body"] = _box_corners(np.eye(4), [cg["x"] - s, cg["y"] - s, cg["z"] - s], [cg["translation"][k] for k in "xyz"])
     held = next((k for k, v in st["boxes"].items() if v == "held"), None)
-    size = 120.0
     if held:
-        parts[f"held {held}"] = _box_corners(tcp, [size - s] * 3, [0, 0, size / 2])
+        hs = sizes.get(held, [120.0] * 3)
+        parts[f"held {held}"] = _box_corners(tcp, [v - s for v in hs], [0, 0, hs[2] / 2])
     yaw = np.radians(cart["yaw_deg"])
     R = np.array([[np.cos(yaw), np.sin(yaw), 0], [-np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])   # room -> cart rotation
     room_to_cart = np.eye(4)
     room_to_cart[:3, :3] = R
     room_to_cart[:3, 3] = -R @ np.array([cart["x_mm"], cart["y_mm"], 0.0])
     things = {}
-    for name, o in n["world"]["obstacles"].items():
+    for name, o in world_obstacles.items():
         lo, hi = np.array(o["min_mm"], float), np.array(o["max_mm"], float)
         if name == "floor":
             hi[2] -= s   # the floor's top face is z = 0; parts resting on it are fine
@@ -226,7 +238,8 @@ async def collision_audit(robot, shrink_mm=2.0):
     for name, v in st["boxes"].items():
         if isinstance(v, dict):
             T = room_to_cart @ vf.pose(vf.rot_z(np.radians(v["yaw_deg"])), np.array([v["x_mm"], v["y_mm"], v["z_mm"]]))
-            things[f"crate {name}"] = _box_corners(T, [size - s] * 3, [0, 0, 0])
+            bs = sizes.get(name, [120.0] * 3)
+            things[f"crate {name}"] = _box_corners(T, [v - s for v in bs], [0, 0, 0])
     hits = []
     for pname, pc in parts.items():
         for tname, tc in things.items():

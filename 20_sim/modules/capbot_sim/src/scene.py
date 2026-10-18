@@ -11,7 +11,7 @@ build_viam_files.py from the thesis MuJoCo model):
 
 Attributes:
     visuals_dir (str, required)   absolute path to 20_sim/generated/visuals
-    odom (str)                    odometry component name, default "odom"
+    odom (str)                    odometry component name, default "odom"; "" for a fixed arm (room stays put)
     poll_hz (number)              how often to read odom, default 10
 """
 
@@ -91,19 +91,20 @@ class Scene(WorldStateStore, EasyResource):
         if not isinstance(d, str) or not (Path(d) / "visuals.json").exists():
             raise ValueError("visuals_dir must be the absolute path of 20_sim/generated/visuals (with visuals.json)")
         odom = attrs.get("odom", "odom")
-        if not isinstance(odom, str) or not odom:
-            raise ValueError('odom must name the odometry component, e.g. "odom"')
+        if not isinstance(odom, str):
+            raise ValueError('odom must name the odometry component, e.g. "odom" ("" for a fixed arm)')
         hz = attrs.get("poll_hz", 10)
         if not isinstance(hz, (int, float)) or hz <= 0:
             raise ValueError("poll_hz must be a number greater than zero")
-        return [odom], []
+        return ([odom] if odom else []), []
 
     @classmethod
     def new(cls, config: ServiceConfig, dependencies: Mapping[ResourceName, ResourceBase]) -> Self:
         self = super().new(config, dependencies)
         attrs = struct_to_dict(config.attributes)
         vis = Path(attrs["visuals_dir"])
-        self.odom = dependencies[Generic.get_resource_name(attrs.get("odom", "odom"))]
+        odom = attrs.get("odom", "odom")
+        self.odom = dependencies[Generic.get_resource_name(odom)] if odom else None   # None: fixed arm, room stays put
         self.dt = 1.0 / float(attrs.get("poll_hz", 10))
         self.transforms: Dict[bytes, Transform] = {}
         for s in json.loads((vis / "visuals.json").read_text())["shapes"]:
@@ -155,7 +156,8 @@ class Scene(WorldStateStore, EasyResource):
         """Keep the room placed around the cart (odom is the cart's place in the room)."""
         while True:
             try:
-                p = await self.odom.do_command({"command": "pose"})
+                p = (await self.odom.do_command({"command": "pose"})) if self.odom else \
+                    {"x_mm": 0.0, "y_mm": 0.0, "yaw_deg": 0.0}
                 now = (p["x_mm"], p["y_mm"], p["yaw_deg"])
                 moved = self.last_cart is None or max(abs(a - b) for a, b in zip(now, self.last_cart)) > 0.5
                 if moved:
