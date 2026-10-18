@@ -1,4 +1,4 @@
-# Primitive map: thesis primitives -> Viam (DRAFT, Shahar approves at Phase 8)
+# Primitive map: thesis primitives -> Viam (approved by Shahar 17 Oct, verbs kept as listed; decision #33)
 
 Source list: CaP_Thesis `docs/Research_Primitives_Survey_2026-09-24.md` (implementation status, 01/10/2026).
 Rule (decision #13): if Viam has it, use Viam. If not, it becomes a DoCommand verb on our service `cap`.
@@ -60,6 +60,30 @@ So a thesis call `move_to_pose(p, frame='cart')` becomes `motion.move("vacuum", 
 - Teleop priority / operator override -> not this week.
 - Pose guard (thesis `pose_guard.py`) -> Viam's own collision checking with the kr6/cart/obstacle geometry.
 
-## `cap` service verbs (to build in Phase 8)
+## Built (17 Oct)
+The `cap` service (`20_sim/modules/capbot_sim/src/cap.py`) has the verbs below; `verbs_check.py` calls each once.
+Differences from the drafts above, found while building:
+- Frames: Viam's world frame is the cart (decision #29), so poses are given in `"world"` (cart floor centre, x forward)
+  or `"room"`; not `kr6_origin`.
+- `pick` / `place` are side picks (the 491 mm tool pointing down cannot reach the top of the 1 m table).
+- Odometry: `odom` DoCommand `pose` (not the cart's).
+- Added `reset_boxes` (sim only: the demo box back to its start).
+- `solve_ik`, `move_linear` force stop, `drive_to` obstacle check: not built.
+
+## Viam functions that could replace or improve verbs (for Shahar to decide; nothing changed yet)
+Checked in the Python SDK 0.84 (V) or the docs/source (V); none of these is used yet.
+| Viam function | What it gives | Could help |
+|---|---|---|
+| Arm `move_through_joint_positions(..., MoveOptions(max_vel_degs_per_sec, max_acc_degs_per_sec2, max_tcp_speed))` | speed / acceleration limits per move (V) | thesis speed arguments on `move_joints`, `move_to_pose`, a slow `approach` |
+| Motion `OrientationConstraint(orientation_tolerance_degs)` | keeps the tool orientation along the whole path (V) | carrying the box level; `move_linear` |
+| Motion `PseudolinearConstraint(line_tolerance_factor, ...)` | a "roughly straight" path, easier to plan than strict linear (V) | `approach` when strict linear fails |
+| Motion `get_plan`, `list_plan_statuses`, `stop_plan` | follow / stop a running plan (V; mainly for base moves in Viam) | thesis `stop_arm` with a reason, status display |
+| `robot.transform_pose(pose, frame)` | any pose into any frame through the frame system (V) | `get_tcp_pose(frame)` without our own FK |
+| Arm `move_through_joint_positions_streamed` | stream joint points, get progress back (V) | teleop / operator override later |
+| Vision service (detections, 3D segmentation) | find objects in camera images (V, service exists) | finding the box with the real D435 instead of a fixed spot |
+| Data capture (configured in the app) | records sensor / arm data to the cloud (V, docs) | thesis experiments: log every run |
+| Sensor-controlled base (`rdk:builtin:sensor-controlled`) | closes the loop on spins / straights with an IMU (V, docs) | the real cart (no wheel encoders) |
+
+## `cap` service verbs (built 17 Oct)
 `status`, `go_to_named_pose`, `approach`, `pick`, `place`, `move_relative`, `drive_to`, `go_to_location`,
 `locations`, `drive_arc`, `estop`, `release_estop`. Every loop bounded; every number an attribute with its unit.

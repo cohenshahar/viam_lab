@@ -1,0 +1,27 @@
+{
+  "_about": "Shahar's changes to the thesis lab for the Viam sim (17 Oct 2026, decisions #34, #35, #36, #37). The thesis lab is a sketch (CaP_Thesis sim/worlds/lab/README.md); move these into the thesis lab model when it is updated, then delete them here. build_viam_files.py applies them on top of the thesis model. mm and degrees, room frame.",
+  "table_top_height_mm": 550,
+  "crate_pallet": {
+    "_about": "like the Viam course palletizer: crates stacked from above in layers of a 2 x 2 grid, on a 200 mm stand (both layers in the arm's reach from the side of the cart, tool pointing down)",
+    "centre_xy_mm": [
+      -1500,
+      2200
+    ],
+    "stand_mm": [
+      300,
+      300,
+      200
+    ],
+    "grid": [
+      2,
+      2
+    ],
+    "layers": 2,
+    "gap_mm": 10,
+    "rgb": [
+      0.55,
+      0.42,
+      0.25
+    ]
+  }
+}

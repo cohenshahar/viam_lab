@@ -18,6 +18,7 @@ from google.protobuf.struct_pb2 import Struct  # noqa: E402
 from viam.components.motor import Motor  # noqa: E402
 from viam.proto.app.robot import ComponentConfig  # noqa: E402
 
+from sim_world import WORLD, Box, near_face_contact  # noqa: E402
 from vacuum import Vacuum  # noqa: E402
 from wheel_odom import WheelOdom  # noqa: E402
 
@@ -104,12 +105,26 @@ async def run():
     vac = Vacuum.new(config("vacuum", {"tool_box_mm": {"x": 70, "y": 70, "z": 476,
                                                         "translation": {"x": 0, "y": 0, "z": -243}}}), {})
     assert (await vac.do_command({"command": "seal"}))["seal"] == 0.0
-    assert await vac.grab() and (await vac.is_holding_something()).is_holding_something
+    assert not await vac.grab() and not (await vac.is_holding_something()).is_holding_something
+    print("ok   suction on with nothing under the cup -> not holding")
+    WORLD.boxes = {"b": Box("b", [120, 120, 120], {"x_mm": 0, "y_mm": 0, "z_mm": 60, "yaw_deg": 0})}
+    WORLD.attach("b")
+    assert (await vac.is_holding_something()).is_holding_something and (await vac.do_command({"command": "seal"}))["seal"] == 1.0
+
+    async def drop_here():
+        return {"x_mm": 10, "y_mm": 20, "z_mm": 60, "yaw_deg": 5}
+    WORLD.release_pose = drop_here
     await vac.open()
-    assert not (await vac.is_holding_something()).is_holding_something
+    assert not (await vac.is_holding_something()).is_holding_something and WORLD.boxes["b"].room["x_mm"] == 10
+    WORLD.release_pose = None
     fmt, data = await vac.get_kinematics()
     assert b"vacuum_tool" in data
-    print("ok   vacuum grab / open / seal / kinematics")
+    print("ok   box attached -> holding, seal 1.0; open -> box rests where the cup put it")
+    c = near_face_contact((0, -60, 60), (0, 1, 0), Box("c", [120, 120, 120], {"x_mm": 0, "y_mm": 0, "z_mm": 60, "yaw_deg": 0}))
+    assert c == "-y", c
+    assert near_face_contact((0, -90, 60), (0, 1, 0), Box("c", [120, 120, 120], {"x_mm": 0, "y_mm": 0, "z_mm": 60, "yaw_deg": 0})) is None
+    assert near_face_contact((0, 0, 120), (0, 0, -1), Box("c", [120, 120, 120], {"x_mm": 0, "y_mm": 0, "z_mm": 60, "yaw_deg": 0})) == "top"
+    print("ok   contact check: cup on the -y face / the top -> yes; 30 mm short -> no")
 
 
 if __name__ == "__main__":

@@ -1,15 +1,15 @@
 """capbot:sim:vacuum - the suction tool as a Viam gripper (sim).
 
-grab = suction on, open = suction off. In the sim there is no air, so grab always
-"holds"; the program decides what is under the cup and moves that box with the
-tool in its own WorldState.
+grab = suction on, open = suction off. It holds something only when a box is stuck to the cup:
+the `cap` service checks the cup touches a box face and attaches it in sim_world before calling grab.
+On open, a held box is put down where the cup is (cap registers how to work that out).
 
 Attributes:
     tool_box_mm (dict, required)  {"x", "y", "z", "translation": {"x","y","z"}} - the tool's
                                   collision box relative to the TCP (generated numbers)
 
 DoCommand:
-    {"command": "seal"} -> {"seal": 0.0 .. 1.0}   (1.0 while holding, like the thesis /tool/seal)
+    {"command": "seal"} -> {"seal": 0.0 .. 1.0}   (1.0 while a box is held, like the thesis /tool/seal)
 """
 
 import json
@@ -23,6 +23,8 @@ from viam.resource.base import ResourceBase
 from viam.resource.easy_resource import EasyResource
 from viam.resource.types import Model, ModelFamily
 from viam.utils import ValueTypes, struct_to_dict
+
+from sim_world import WORLD
 
 
 def _box(attrs):
@@ -53,15 +55,22 @@ class Vacuum(Gripper, EasyResource):
                        "geometry": box}],
             "joints": [],
         }).encode()
-        self.holding = False
+        self.suction = False
         return self
 
+    @property
+    def holding(self) -> bool:
+        return self.suction and WORLD.held_box() is not None
+
     async def open(self, *, extra=None, timeout=None, **kwargs):
-        self.holding = False
+        self.suction = False
+        if WORLD.held_box() is not None:
+            pose = await WORLD.release_pose() if WORLD.release_pose else None
+            WORLD.detach(pose)
 
     async def grab(self, *, extra=None, timeout=None, **kwargs) -> bool:
-        self.holding = True
-        return True
+        self.suction = True
+        return self.holding
 
     async def is_holding_something(self, *, extra=None, timeout=None, **kwargs) -> Gripper.HoldingStatus:
         return Gripper.HoldingStatus(is_holding_something=self.holding)

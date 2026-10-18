@@ -14,7 +14,9 @@ capbot = the lab cart with the KUKA KR6 and the suction tool. Viam machine **cap
 | `kinematics/kr6.json` | KR6 kinematics for Viam (SVA) | **no, generated** |
 | `configs/capbot-sim.json` | the capbot-sim machine config | **no, generated** |
 | `generated/visuals/` | CAD meshes for the 3D scene (KR6 link GLBs; tool / cart / room PLYs, metres) | **no, generated** |
-| `modules/capbot_sim/` | local module: `capbot:sim:kr6` (arm + CAD meshes), `capbot:sim:motor` (drive motors), `capbot:sim:wheel-odom` (`odom`), `capbot:sim:vacuum` (tool), `capbot:sim:scene` (3D scene shapes) | yes (code) |
+| `configs/locations.json` | named cart places, the crates, the pick station and the pallet slots (room frame) | **no, generated** |
+| `configs/lab_changes.json` | Shahar's changes to the thesis lab for the sim (table height, crate pallet) | yes |
+| `modules/capbot_sim/` | local module: `capbot:sim:kr6` (arm + CAD meshes), `capbot:sim:motor` (drive motors), `capbot:sim:wheel-odom` (`odom`), `capbot:sim:vacuum` (tool), `capbot:sim:scene` (3D scene shapes), `capbot:sim:cap` (the thesis verbs) | yes (code) |
 | `scripts/capbot_common.py` | connect, numbers, and `arm_move()`: every arm move goes through it | yes (code) |
 | `scripts/*_check.py` | one check per gate | yes (code) |
 | `primitive_map.md` | thesis primitives -> Viam calls / our verbs | yes |
@@ -73,9 +75,27 @@ cd 20_sim/scripts
 ../../.venv-linux/bin/python base_check.py                    # GATE 4
 ../../.venv-linux/bin/python sensors_check.py                 # GATE 6
 ../../.venv-linux/bin/python world_check.py                   # GATE 7
+../../.venv-linux/bin/python pick_place_check.py              # GATE 5
+../../.venv-linux/bin/python verbs_check.py                   # GATE 8
+../../.venv-linux/bin/python demo_pick_place.py --runs 5      # GATE 9 (the demo; watch the 3D SCENE)
+../../.venv-linux/bin/python sensor_snapshot.py               # what the sensors report (saved to out/)
 ```
+
+## The demo and the verbs
+`cap` (a generic service) holds the thesis primitives Viam lacks, as DoCommand verbs (`20_sim/primitive_map.md`):
+`await cap.do_command({"command": "pick", "box": "box1"})`. From a script: `capbot_common.cap(robot, "pick", box="box1")`.
+Verbs answer `{"ok": true, ...}` or `{"error": ..., "needs_clarification": true|false}`.
+The demo, like the Viam course palletizer: 8 crates (120 mm cubes) come one at a time to the pick station on the
+lab table (top lowered to 0.55 m, `configs/lab_changes.json`). The cart parks side-on (crate 480 mm to its left), the
+arm picks the crate from above, the cart drives to the crate pallet (a 200 mm stand in the back-left of the lab) and
+the arm lowers the crate into the next slot from above: 2 x 2 grid, 2 layers. While carried, the crate rides on
+`vacuum` in planning (a WorldState transform) and in the 3D scene.
+No collisions: the arm planner checks every arm move; before every cart move the arm is tucked in and `drive_to`
+checks the cart's swept path against the room and the crates; the demo also runs `collision_audit` (own kinematics)
+after every step. `demo_pick_place.py --crates 2` for a short run.
 Tests (no viam-server needed):
 ```bash
+.venv-linux/bin/python 20_sim/modules/capbot_sim/tests/test_cap_math.py
 .venv-linux/bin/python 20_sim/modules/capbot_sim/tests/test_cad.py
 .venv-linux/bin/python 20_sim/modules/capbot_sim/tests/test_sim_motor.py
 .venv-linux/bin/python 20_sim/scripts/test_room_frame.py

@@ -35,7 +35,9 @@ def load_env():
 async def connect(machine="sim"):
     # The SDK only builds clients for resource types whose code was imported before connecting,
     # so import every type the helpers below use (arm_move needs generic + motion) here.
+    import viam.components.arm  # noqa: F401  (collision_audit)
     import viam.components.generic  # noqa: F401
+    import viam.services.generic  # noqa: F401  (the cap service)
     import viam.services.motion  # noqa: F401
     from viam.robot.client import RobotClient
 
@@ -80,10 +82,13 @@ def arm_constraints():
     """Constraints for every motion.move of the KR6.
     The wrist camera is bolted to the wrist. Viam can only hang it from the arm's end, and the
     fake camera reports a 40 x 40 x 10 mm box, which then sits inside link 4's collision box at
-    every pose. So the planner may let the camera touch the wrist links it is mounted on."""
+    every pose. So the planner may let the camera touch the wrist links it is mounted on.
+    Also link_2 / link_4 and link_4 / link_6: their mesh-bound boxes overlap whenever the elbow or wrist folds;
+    the real KR6 cannot hit itself there inside its joint limits. Same list as cap.ALLOWED_PAIRS in the module."""
     from viam.proto.service.motion import CollisionSpecification, Constraints
     allow = CollisionSpecification.AllowedFrameCollisions
     pairs = [allow(frame1="cam-wrist", frame2=f"kr6:{link}") for link in ("link_4", "link_5", "link_6")]
+    pairs += [allow(frame1="kr6:link_2", frame2="kr6:link_4"), allow(frame1="kr6:link_4", frame2="kr6:link_6")]
     return Constraints(collision_specification=[CollisionSpecification(allows=pairs)])
 
 
@@ -148,6 +153,94 @@ async def arm_move(robot, destination, extra_obstacles=()):
     ws.obstacles.extend(extra_obstacles)
     motion = MotionClient.from_robot(robot, "builtin")
     return await motion.move("vacuum", destination, world_state=ws, constraints=arm_constraints())
+
+
+def _obb_overlap(a, b):
+    """Two boxes given as 8 corners each (same frame) overlap? Separating axis test, 15 axes."""
+    import numpy as np
+
+    def axes(c):
+        return [c[4] - c[0], c[2] - c[0], c[1] - c[0]]
+    ax = axes(a) + axes(b) + [np.cross(u, v) for u in axes(a) for v in axes(b)]
+    for v in ax:
+        n = np.linalg.norm(v)
+        if n < 1e-9:
+            continue
+        v = v / n
+        pa, pb = a @ v, b @ v
+        if pa.max() < pb.min() or pb.max() < pa.min():
+            return False
+    return True
+
+
+def _box_corners(T, size, centre):
+    """8 corners (cart frame) of a box of size (x, y, z) centred at `centre` in frame T (4x4)."""
+    import itertools
+    import numpy as np
+    h, c = np.array(size, float) / 2, np.array(centre, float)
+    return np.array([(T @ np.append(c + h * s, 1))[:3] for s in itertools.product((-1, 1), repeat=3)])
+
+
+async def collision_audit(robot, shrink_mm=2.0):
+    """Independent check, from our own kinematics (not Viam's planner): do the KR6 link boxes, the tool box, the held
+    crate or the cart body overlap the room's obstacles (no margin) or a resting crate? Returns a list of
+    "<part> x <thing>" strings, empty when clear. Boxes are shrunk by shrink_mm so resting contact (cup on a crate,
+    crate on the table) does not count."""
+    import numpy as np
+    import viam_frames as vf
+    from viam.components.arm import Arm
+
+    n, kr6 = numbers(), kinematics("kr6")
+    st = await cap(robot, "status")
+    cart = st["cart"]
+    q = list((await Arm.from_robot(robot, "kr6").get_joint_positions()).values)
+    fk = vf.sva_fk(kr6, q)
+    mount = vf.pose(t=np.array(n["viam_frames"]["kr6_translation_mm"], float))
+    tcp = mount @ fk["flange"] @ vf.pose(t=np.array(n["viam_frames"]["vacuum_translation_mm"], float))
+    s = shrink_mm
+    parts = {}
+    for l in kr6["links"]:
+        g = l.get("geometry")
+        if g:
+            parts[f"kr6:{l['id']}"] = _box_corners(mount @ fk[l["id"]], [g["x"] - s, g["y"] - s, g["z"] - s],
+                                                   [g["translation"][k] for k in "xyz"])
+    tg = n["viam_frames"]["vacuum_geometry"]
+    parts["tool"] = _box_corners(tcp, [tg["x"] - s, tg["y"] - s, tg["z"] - s], [tg["translation"][k] for k in "xyz"])
+    cg = n["viam_frames"]["cart_geometry"]
+    parts["cart body"] = _box_corners(np.eye(4), [cg["x"] - s, cg["y"] - s, cg["z"] - s], [cg["translation"][k] for k in "xyz"])
+    held = next((k for k, v in st["boxes"].items() if v == "held"), None)
+    size = 120.0
+    if held:
+        parts[f"held {held}"] = _box_corners(tcp, [size - s] * 3, [0, 0, size / 2])
+    yaw = np.radians(cart["yaw_deg"])
+    R = np.array([[np.cos(yaw), np.sin(yaw), 0], [-np.sin(yaw), np.cos(yaw), 0], [0, 0, 1]])   # room -> cart rotation
+    room_to_cart = np.eye(4)
+    room_to_cart[:3, :3] = R
+    room_to_cart[:3, 3] = -R @ np.array([cart["x_mm"], cart["y_mm"], 0.0])
+    things = {}
+    for name, o in n["world"]["obstacles"].items():
+        lo, hi = np.array(o["min_mm"], float), np.array(o["max_mm"], float)
+        if name == "floor":
+            hi[2] -= s   # the floor's top face is z = 0; parts resting on it are fine
+        things[name] = _box_corners(room_to_cart, hi - lo - s, (hi + lo) / 2)
+    for name, v in st["boxes"].items():
+        if isinstance(v, dict):
+            T = room_to_cart @ vf.pose(vf.rot_z(np.radians(v["yaw_deg"])), np.array([v["x_mm"], v["y_mm"], v["z_mm"]]))
+            things[f"crate {name}"] = _box_corners(T, [size - s] * 3, [0, 0, 0])
+    hits = []
+    for pname, pc in parts.items():
+        for tname, tc in things.items():
+            if pname == "cart body" and tname == "floor":
+                continue
+            if _obb_overlap(pc, tc):
+                hits.append(f"{pname} x {tname}")
+    return hits
+
+
+async def cap(robot, verb, **args):
+    """Call one `cap` verb (20_sim/primitive_map.md). Returns its answer: {"ok": True, ...} or {"error": ...}."""
+    from viam.services.generic import Generic as GenericService
+    return dict(await GenericService.from_robot(robot, "cap").do_command({"command": verb, **args}, timeout=300))
 
 
 def fmt_pose(p):

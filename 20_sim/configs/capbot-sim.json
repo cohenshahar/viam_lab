@@ -114,11 +114,11 @@
         "tool_box_mm": {
           "x": 70.0,
           "y": 70.0,
-          "z": 476.0,
+          "z": 436.0,
           "translation": {
             "x": -0.0,
             "y": 0.0,
-            "z": -243.0
+            "z": -223.0
           }
         }
       },
@@ -277,6 +277,28 @@
         "visuals_dir": "/home/shahar/robotics/viam_lab/20_sim/generated/visuals",
         "odom": "odom",
         "poll_hz": 10
+      }
+    },
+    {
+      "name": "cap",
+      "api": "rdk:service:generic",
+      "model": "capbot:sim:cap",
+      "attributes": {
+        "numbers_path": "/home/shahar/robotics/viam_lab/20_sim/generated/robot_numbers.json",
+        "kinematics_path": "/home/shahar/robotics/viam_lab/20_sim/kinematics/kr6.json",
+        "locations_path": "/home/shahar/robotics/viam_lab/20_sim/configs/locations.json",
+        "drive_speed_mm_per_sec": 250,
+        "turn_speed_deg_per_sec": 45,
+        "standoff_mm": 100,
+        "lift_mm": 30,
+        "retreat_mm": 150,
+        "verb_timeout_sec": 120,
+        "dock_mm": 250,
+        "carry_tcp_mm": [
+          300,
+          0,
+          900
+        ]
       }
     }
   ]

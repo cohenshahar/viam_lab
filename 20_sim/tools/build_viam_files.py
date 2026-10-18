@@ -43,6 +43,9 @@ CART_BOX_FLOOR_GAP_MM = 50.0  # cart body box starts this far above the floor
 ARM_SEAT_GAP_MM = 2.0      # cart body box stops this far under the arm base plate
 ARM_BASE_BOX_LIFT_MM = 1.0  # arm base box starts this far above the plate underside
 TOOL_BOX_SHORT_MM = 5.0    # tool box ends this far before the cup face, so the cup can touch a box
+TOOL_BOX_ROOT_SKIP_MM = 40.0  # tool box starts this far out from its root at the flange: the flat F/T puck there
+                              # sits inside the wrist outline, and link_4's mesh-bound box bulges over it when the
+                              # wrist folds (home_folded / ready_high / drive_look were refused, 17 Oct)
 
 ARM_CHAIN = [  # (body, joint that moves it)
     ("kuka_base", None),
@@ -235,6 +238,7 @@ def build_tool(mdl, numbers, flange_r):
     cf = corners @ to_flange.T
     lo_f, hi_f = cf.min(axis=0), cf.max(axis=0)
     hi_f[2] = min(hi_f[2], tcp_f[2] - TOOL_BOX_SHORT_MM)
+    lo_f[2] += TOOL_BOX_ROOT_SKIP_MM
     box = box_geometry(lo_f, hi_f, "vacuum tool")
     box.pop("label")
     numbers["tool"] = {
@@ -324,7 +328,40 @@ def build_named_poses(cap, numbers):
     return poses
 
 
+LAB_CHANGES = REPO / "20_sim/configs/lab_changes.json"   # Shahar's sim changes to the thesis lab (decision #34)
+
+
+def lab_changes():
+    return json.loads(LAB_CHANGES.read_text()) if LAB_CHANGES.exists() else {}
+
+
+class TableLift:
+    """Moves the table to a new top height: legs shortened, the top shifted down, the top's thickness kept.
+    z' = z * k below the underside of the top, z + dz above it (room frame, mm)."""
+
+    def __init__(self, mdl, new_top_mm):
+        geoms = [mdl.id(mujoco.mjtObj.mjOBJ_GEOM, "lab_table_top")]
+        lo, hi = mdl.world_box(geoms)
+        self.top, self.under = float(hi[2]), float(lo[2])
+        self.new_top = float(new_top_mm) if new_top_mm else self.top
+        self.dz = self.new_top - self.top
+        self.k = (self.under + self.dz) / self.under
+        self.bodies = set(mdl.subtree("lab_table"))
+
+    def z(self, z):
+        z = np.asarray(z, float)
+        return np.where(z <= self.under + 1e-6, z * self.k, z + self.dz)
+
+
+def pallet_stand(p):
+    """The crate pallet's stand: (lo, hi) in the room frame (mm)."""
+    (cx, cy), (L, W, H) = p["centre_xy_mm"], p["stand_mm"]
+    return (cx - L / 2, cy - W / 2, 0.0), (cx + L / 2, cy + W / 2, H)
+
+
 def build_world(mdl, numbers):
+    changes = lab_changes()
+    lift = TableLift(mdl, changes.get("table_top_height_mm"))
     rec = {}
     for name, (what, exact_top) in OBSTACLES.items():
         if isinstance(what, str):
@@ -332,6 +369,9 @@ def build_world(mdl, numbers):
         else:
             geoms = [mdl.id(mujoco.mjtObj.mjOBJ_GEOM, g) for g in what]
         lo, hi = mdl.world_box(geoms)
+        if name == "lab-table" and lift.dz:
+            lo, hi = lo.copy(), hi.copy()
+            lo[2], hi[2] = float(lift.z(lo[2])), float(lift.z(hi[2]))
         if name == "floor":
             glo, ghi = lo.copy(), hi.copy()
         else:
@@ -342,10 +382,23 @@ def build_world(mdl, numbers):
         rec[name] = {"min_mm": r3(lo), "max_mm": r3(hi), "margin_mm": 0 if name == "floor" else MARGIN_MM,
                      "top_kept_exact": bool(exact_top),
                      "planning_box_mm": {"min": r3(glo), "max": r3(ghi)}}
-    numbers["world"] = {"source": "sim/worlds/lab/*.xml via " + WORLD_REL,
+    pallet_info = None
+    if "crate_pallet" in changes:
+        p = changes["crate_pallet"]
+        lo, hi = (np.array(v, float) for v in pallet_stand(p))
+        glo, ghi = lo - MARGIN_MM, hi + MARGIN_MM
+        glo[2], ghi[2] = 0.0, hi[2]   # top kept exact: crates rest on it
+        rec["pallet-stand"] = {"min_mm": r3(lo), "max_mm": r3(hi), "margin_mm": MARGIN_MM, "top_kept_exact": True,
+                               "planning_box_mm": {"min": r3(glo), "max": r3(ghi)}, "source": "lab_changes.json"}
+        pallet_info = {"centre_xy_mm": list(p["centre_xy_mm"]), "top_mm": float(hi[2]), "grid": list(p["grid"]),
+                       "layers": int(p["layers"]), "gap_mm": float(p["gap_mm"])}
+    numbers["world"] = {"source": "sim/worlds/lab/*.xml via " + WORLD_REL + " + 20_sim/configs/lab_changes.json",
                         "status": "SKETCH, not measured (see sim/worlds/lab/README.md)",
                         "origin": "centre of the lab floor, +X along the 9 m side",
+                        "lab_changes": {"table_top_height_mm": lift.new_top, "thesis_table_top_mm": lift.top,
+                                        "crate_pallet": bool(pallet_info)},
                         "obstacles": rec,
+                        "crate_pallet": pallet_info,
                         "note": "Room frame. planning_box_mm = the box the arm planner avoids (margin added)."}
 
 
@@ -436,10 +489,26 @@ def build_visuals(mdl, numbers, kr6, flange_r, tcp_f):
     parts = [p for p in (geom_part(mdl, g, CART) for g in visible_geoms(mdl, cart_bodies)) if p]
     for i, group in enumerate(chunks(parts, 30000)):
         shapes.append((f"cart-{i + 1}", "cart", group))
-    # room, in the room frame; the scene service places it around the cart from odom
+    # room, in the room frame; the scene service places it around the cart from odom.
+    # Shahar's lab changes (lower table, crate bin) are applied here too (decision #34).
+    changes = lab_changes()
+    lift = TableLift(mdl, changes.get("table_top_height_mm"))
     robot = set(mdl.subtree(CART))
     room = [b for b in range(mdl.m.nbody) if b not in robot]
-    parts = [p for p in (geom_part(mdl, g, "world") for g in visible_geoms(mdl, room)) if p]
+    parts = []
+    for g in visible_geoms(mdl, room):
+        p = geom_part(mdl, g, "world")
+        if p is None:
+            continue
+        if mdl.m.geom_bodyid[g] in lift.bodies and lift.dz:
+            v = p[0].copy()
+            v[:, 2] = lift.z(v[:, 2])
+            p = (v, p[1], p[2])
+        parts.append(p)
+    if "crate_pallet" in changes:
+        lo, hi = (np.array(v, float) for v in pallet_stand(changes["crate_pallet"]))
+        v, fc = vm.box((hi - lo) / 2)
+        parts.append((v + (hi + lo) / 2, fc, changes["crate_pallet"].get("rgb", [0.55, 0.42, 0.25])))
     shapes.append(("room", "room", parts))
     for name, parent, group in shapes:
         size = vm.write_ply(group, out / f"{name}.ply")
