@@ -3,6 +3,8 @@
 capbot = the lab cart with the KUKA KR6 and the suction tool. Viam machine **capbot-sim**
 (org Robotics_BGU, location `sim`). Real cart = machine **capbot** (`30_robot/`).
 
+**To show the sims (Ubuntu runs them, any computer watches): `SHOW_DEMO.md`.**
+
 ## What is where
 | Path | What | Edited by hand? |
 |---|---|---|
