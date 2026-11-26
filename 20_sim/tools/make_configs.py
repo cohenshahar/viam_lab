@@ -66,6 +66,7 @@ def sim_config(n):
     motor = lambda name: {"name": name, "api": "rdk:component:motor", "model": "capbot:sim:motor",
                           "attributes": {"max_rpm": max_rpm}}
     return {
+        "network": {"bind_address": f":{CAPBOT_PORT}"},
         "modules": [{"type": "local", "name": "capbot-sim-module",
                      "executable_path": str(REPO / "20_sim/modules/capbot_sim/run.sh")}],
         "components": [
@@ -164,7 +165,8 @@ def locations(n):
 
 
 ARENA = REPO / "20_sim/generated/arena/arena_numbers.json"
-ARENA_PORT = 8082          # second viam-server on the same PC as capbot-sim (which uses 8080)
+CAPBOT_PORT = 8081         # not Viam's default 8080: CVAT already uses 8080 on the Ubuntu PC
+ARENA_PORT = 8082          # second viam-server on the same PC as capbot-sim
 
 
 def arena_components(n, a, arm):

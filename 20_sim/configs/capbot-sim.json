@@ -1,4 +1,7 @@
 {
+  "network": {
+    "bind_address": ":8081"
+  },
   "modules": [
     {
       "type": "local",

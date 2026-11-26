@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run the armtable-sim machine on this PC, next to capbot-sim (which viam-agent runs as a service on port 8080).
+# Run the armtable-sim machine on this PC, next to capbot-sim (which viam-agent runs as a service on port 8081).
 # This one runs as your user on port 8082 (set in its config) until you press Ctrl+C.
 #
 # Once: in the app, create machine armtable-sim (location arm-table), copy its machine cloud credentials into
